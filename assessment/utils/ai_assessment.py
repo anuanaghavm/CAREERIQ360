@@ -89,10 +89,9 @@
 
 import openai
 from django.conf import settings
+import re
 
 client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
-
-import re
 
 def generate_question(theory_text, previous_qas):
     prompt = f"""
@@ -121,7 +120,7 @@ Important:
 """
 
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",  # 🔄 changed from gpt-3.5-turbo to gpt-4o
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
         max_tokens=300,
@@ -129,7 +128,6 @@ Important:
 
     raw_output = response.choices[0].message.content.strip()
 
-    # Extract question and options
     question_match = re.search(r"Q:\s*(.+)", raw_output)
     options = re.findall(r"[A-D]\.\s*(.+)", raw_output)
 
@@ -151,7 +149,6 @@ Important:
     }
 
 
-
 def evaluate_answer(question, answer, theory_text):
     prompt = f"""
 Evaluate the answer provided for the question below based on the following theory. Return 'Correct' or 'Incorrect' and a short reason.
@@ -167,7 +164,7 @@ User Answer:
 """
 
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",  # ✅ FIXED HERE too
+        model="gpt-4o",  # 🔄 changed from gpt-3.5-turbo to gpt-4o
         messages=[
             {"role": "user", "content": prompt}
         ],
@@ -176,4 +173,3 @@ User Answer:
     )
 
     return response.choices[0].message.content
-
