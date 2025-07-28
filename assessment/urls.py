@@ -8,7 +8,7 @@ urlpatterns = [
     path('theory/<int:pk>/',TheoryRetrieveUpdateDestroyAPIView.as_view(),name="theory-retrieve-update-destroy"),
     path('assessment/',AssessmentListCreateView.as_view(),name="assessment-list-create"),
     path('assessment/<int:pk>/',AssessmentRetrieveUpdateDestroyAPIView.as_view(),name="assessment-retrieve-update-destroy"),
-    path("api/ai-assessment/<int:assessment_id>/", AIQuestionView.as_view(), name="ai-question"),
+    path("ai-assessment/<int:assessment_id>/", AIQuestionView.as_view(), name="ai-question"),
 
 
 ]
