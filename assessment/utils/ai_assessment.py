@@ -87,22 +87,137 @@
 
 # utils/ai_assessment.py
 
+# utils/ai_assessment.py
+
+# import openai
+# import re
+# from django.conf import settings
+
+# client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+
+# def generate_question(theory_text, previous_qas, question_count):
+#     if question_count >= 2:
+#         return {"question": "You have completed all 5 questions.", "options": {}}
+
+#     prompt = f"""
+# You are a smart educational AI designed to understand user behavior and preferences based on learning theories.
+
+# Theory:
+# {theory_text}
+
+# Previous Q&A:
+# {previous_qas if previous_qas else "None"}
+
+# Ask the next question in this format:
+
+# Q: <question>
+# A. <option A>
+# B. <option B>
+# C. <option C>
+# D. <option D>
+# """
+
+#     response = client.chat.completions.create(
+#         model="gpt-4o",
+#         messages=[{"role": "user", "content": prompt}],
+#         temperature=0.7,
+#         max_tokens=300,
+#     )
+
+#     raw_output = response.choices[0].message.content.strip()
+#     question_match = re.search(r"Q:\s*(.+)", raw_output)
+#     options = re.findall(r"[A-D]\.\s*(.+)", raw_output)
+
+#     if not question_match or len(options) != 1:
+#         return {"question": "Invalid format", "options": {}}
+
+#     return {
+#         "question": question_match.group(1).strip(),
+#         "options": {
+#             "a": options[0].strip(),
+#             "b": options[1].strip(),
+#             "c": options[2].strip(),
+#             "d": options[3].strip(),
+#         }
+#     }
+
+# def evaluate_answer(question, answer_text, theory_text):
+#     prompt = f"""
+# Evaluate the answer for the behavioral question based on this theory:
+
+# Theory:
+# {theory_text}
+
+# Question:
+# {question}
+
+# Answer:
+# {answer_text}
+
+# Provide a short interpretation of what this answer reveals about the user.
+# """
+
+#     response = client.chat.completions.create(
+#         model="gpt-4o",
+#         messages=[{"role": "user", "content": prompt}],
+#         temperature=0.7,
+#         max_tokens=300,
+#     )
+
+#     return response.choices[0].message.content.strip()
+
+# def generate_ai_report(qas):
+#     qas_text = "\n".join([
+#         f"Q: {qa['question']}\nA: {qa['answer']}\nNote: {qa['evaluation']}"
+#         for qa in qas if qa["answer"]
+#     ])
+
+#     prompt = f"""
+# You are a behavioral assessment AI. Based on the user's answers and evaluations below, generate a personalized report.
+
+# Q&A with notes:
+# {qas_text}
+
+# Provide the report in sections:
+# - Learning Style
+# - Cognitive Strengths
+# - Personality Traits
+# - Career Recommendations
+# - Personal Growth Tips
+# """
+
+#     response = client.chat.completions.create(
+#         model="gpt-4o",
+#         messages=[{"role": "user", "content": prompt}],
+#         temperature=0.7,
+#         max_tokens=1000,
+#     )
+
+#     return response.choices[0].message.content.strip()
+
+
 import openai
-from django.conf import settings
 import re
+from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
+# from .models import Assessment
 
 client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 
-def generate_question(theory_text, previous_qas):
+MAX_QUESTIONS = 2
+
+def generate_question(theory_text, previous_qas, question_count):
+    if question_count >= MAX_QUESTIONS:
+        return {"question": "You have completed all questions.", "options": {}}
+
     prompt = f"""
 You are a smart educational AI designed to understand user behavior and preferences based on learning theories.
-
-The goal is NOT to quiz the user about theory content. Instead, you should ask **reflective behavioral questions** that help infer the user's learning preferences, personality, or cognitive style, depending on the theory below.
 
 Theory:
 {theory_text}
 
-Previous Questions and Answers:
+Previous Q&A:
 {previous_qas if previous_qas else "None"}
 
 Ask the next question in this format:
@@ -112,34 +227,24 @@ A. <option A>
 B. <option B>
 C. <option C>
 D. <option D>
-
-Important:
-- The question must be behavior-based.
-- Do NOT mention the name of the theory in the question.
-- Each option should reflect a different behavioral trait or preference related to the theory.
 """
 
     response = client.chat.completions.create(
-        model="gpt-4o",  # 🔄 changed from gpt-3.5-turbo to gpt-4o
+        model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
         max_tokens=300,
     )
 
     raw_output = response.choices[0].message.content.strip()
-
     question_match = re.search(r"Q:\s*(.+)", raw_output)
     options = re.findall(r"[A-D]\.\s*(.+)", raw_output)
 
     if not question_match or len(options) != 4:
-        return {
-            "question": "Invalid question format received from AI.",
-            "options": {},
-        }
+        return {"question": "Invalid format", "options": {}}
 
-    question_text = question_match.group(1).strip()
     return {
-        "question": question_text,
+        "question": question_match.group(1).strip(),
         "options": {
             "a": options[0].strip(),
             "b": options[1].strip(),
@@ -148,10 +253,9 @@ Important:
         }
     }
 
-
-def evaluate_answer(question, answer, theory_text):
+def evaluate_answer(question, answer_text, theory_text):
     prompt = f"""
-Evaluate the answer provided for the question below based on the following theory. Return 'Correct' or 'Incorrect' and a short reason.
+Evaluate the answer for the behavioral question based on this theory:
 
 Theory:
 {theory_text}
@@ -159,17 +263,46 @@ Theory:
 Question:
 {question}
 
-User Answer:
-{answer}
+Answer:
+{answer_text}
+
+Provide a short interpretation of what this answer reveals about the user.
 """
 
     response = client.chat.completions.create(
-        model="gpt-4o",  # 🔄 changed from gpt-3.5-turbo to gpt-4o
-        messages=[
-            {"role": "user", "content": prompt}
-        ],
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
         max_tokens=300,
     )
 
-    return response.choices[0].message.content
+    return response.choices[0].message.content.strip()
+
+def generate_ai_report(qas):
+    qas_text = "\n".join([
+        f"Q: {qa['question']}\nA: {qa['answer']}\nNote: {qa['evaluation']}"
+        for qa in qas if qa["answer"]
+    ])
+
+    prompt = f"""
+You are a behavioral assessment AI. Based on the user's answers and evaluations below, generate a personalized report.
+
+Q&A with notes:
+{qas_text}
+
+Provide the report in sections:
+- Learning Style
+- Cognitive Strengths
+- Personality Traits
+- Career Recommendations
+- Personal Growth Tips
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+        max_tokens=1000,
+    )
+
+    return response.choices[0].message.content.strip()

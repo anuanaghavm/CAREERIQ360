@@ -1,14 +1,15 @@
 from django.urls import path
-from .views import AgeGroupListCreateAPIView,AgeGroupRetrieveUpdateDestroyAPIView,TheoryListCreateAPIView,TheoryRetrieveUpdateDestroyAPIView,AssessmentListCreateView,AssessmentRetrieveUpdateDestroyAPIView,AIQuestionView
+from .views import TestListCreateAPIView,TestRetrieveUpdateDestroyAPIView,TheoryListCreateAPIView,TheoryRetrieveUpdateDestroyAPIView,AgeGroupTestTheoryAPIView,AssessmentListCreateView,AssessmentRetrieveUpdateDestroyAPIView,AIQuestionView,AIReportView
 
 urlpatterns = [
-    path('agegroup/',AgeGroupListCreateAPIView.as_view(),name="agegroup-list-create"),
-    path('agegroup/<int:pk>/',AgeGroupRetrieveUpdateDestroyAPIView.as_view(),name="agegroup-retrieve-update-destroy"),
+    path('test/',TestListCreateAPIView.as_view(),name="agegroup-list-create"),
+    path('test/<int:pk>/',TestRetrieveUpdateDestroyAPIView.as_view(),name="agegroup-retrieve-update-destroy"),
     path('theory/',TheoryListCreateAPIView.as_view(),name="theory-list-create"),
     path('theory/<int:pk>/',TheoryRetrieveUpdateDestroyAPIView.as_view(),name="theory-retrieve-update-destroy"),
     path('assessment/',AssessmentListCreateView.as_view(),name="assessment-list-create"),
     path('assessment/<int:pk>/',AssessmentRetrieveUpdateDestroyAPIView.as_view(),name="assessment-retrieve-update-destroy"),
+    path('age-group/', AgeGroupTestTheoryAPIView.as_view(), name='age-group-tests-theories'),
     path("ai-assessment/<int:assessment_id>/", AIQuestionView.as_view(), name="ai-question"),
-
+    path('ai-assessment/<int:assessment_id>/report/', AIReportView.as_view(), name='ai_report'),
 
 ]
