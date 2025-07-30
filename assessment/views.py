@@ -187,13 +187,13 @@ class AgeGroupReportAPIView(APIView):
 
         # Get all unique tests (should be 5 for report generation)
         completed_assessments = [a for a in assessments if SESSION_STORE.get(a.id, {}).get("completed")]
-        completed_test_ids = set([a.test_id for a in completed_assessments])
+        incomplete_count = len(assessments) - len(completed_assessments)
 
-        if len(completed_test_ids) < 5:
+        if incomplete_count > 0:
             return Response({
                 "age_group": age_group,
                 "status": "incomplete",
-                "message": f"Only {len(completed_test_ids)} out of 5 tests are completed. Please finish all to get the report."
+                "message": f"{len(completed_assessments)} out of {len(assessments)} assessments completed. {incomplete_count} remaining."
             }, status=400)
 
         # Generate a final report by combining all evaluations
