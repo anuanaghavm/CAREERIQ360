@@ -1,221 +1,39 @@
-# import cohere
-# import re
-# from django.conf import settings
+# ai_assessment.py
 
-# # Initialize Cohere client
-# co = cohere.Client(settings.COHERE_API_KEY)
-
-# def clean_and_parse_question(text):
-#     # Decode escape characters
-#     cleaned = text.encode().decode('unicode_escape').strip()
-#     lines = cleaned.split("\n")
-
-#     question = ""
-#     options = {}
-
-#     for line in lines:
-#         if line.lower().startswith("q:"):
-#             question = line[2:].strip()
-#         elif re.match(r"^[a-dA-D]\.", line.strip()):
-#             key = line[0].lower()
-#             val = line[2:].strip()
-#             options[key] = val
-
-#     return question, options
-
-# def generate_question(theory_text, age_group, assessment_title, previous_qas):
-#     prompt = f"""
-# You are a smart educational AI. Your goal is to generate one behavior-assessment multiple-choice question based on:
-
-# 1. The theory: {theory_text}
-# 2. The age group of the user: {age_group}
-# 3. The purpose of the assessment: {assessment_title}
-
-# Ask questions that help understand the user's preferences or behaviors — do NOT ask factual or definition-based questions.
-
-# Make sure the question is age-appropriate, engaging, and based on the learning theory.
-
-# Previous Q&A history:
-# {previous_qas if previous_qas else "None"}
-
-# Format:
-# Q: <behavior-based question>
-# a. <option A>
-# b. <option B>
-# c. <option C>
-# d. <option D>
-# """
-
-#     response = co.generate(
-#         model="command-r-plus",
-#         prompt=prompt,
-#         max_tokens=300,
-#         temperature=0.7,
-#     )
-
-#     raw_text = response.generations[0].text
-#     question, options = clean_and_parse_question(raw_text)
-
-#     return {
-#         "question": question,
-#         "options": options
-#     }
-
-# def evaluate_answer(question, answer, theory_text):
-#     prompt = f"""
-# Evaluate the answer provided for the question below based on the following theory. Return 'Correct' or 'Incorrect' and a short reason.
-
-# Theory:
-# {theory_text}
-
-# Question:
-# {question}
-
-# User Answer:
-# {answer}
-# """
-
-#     response = co.generate(
-#         model="command-r-plus",
-#         prompt=prompt,
-#         max_tokens=150,
-#         temperature=0.7,
-#     )
-
-#     return response.generations[0].text.strip()
-
-
-# utils/ai_assessment.py
-
-# utils/ai_assessment.py
-
-# import openai
-# import re
-# from django.conf import settings
-
-# client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
-
-# def generate_question(theory_text, previous_qas, question_count):
-#     if question_count >= 2:
-#         return {"question": "You have completed all 5 questions.", "options": {}}
-
-#     prompt = f"""
-# You are a smart educational AI designed to understand user behavior and preferences based on learning theories.
-
-# Theory:
-# {theory_text}
-
-# Previous Q&A:
-# {previous_qas if previous_qas else "None"}
-
-# Ask the next question in this format:
-
-# Q: <question>
-# A. <option A>
-# B. <option B>
-# C. <option C>
-# D. <option D>
-# """
-
-#     response = client.chat.completions.create(
-#         model="gpt-4o",
-#         messages=[{"role": "user", "content": prompt}],
-#         temperature=0.7,
-#         max_tokens=300,
-#     )
-
-#     raw_output = response.choices[0].message.content.strip()
-#     question_match = re.search(r"Q:\s*(.+)", raw_output)
-#     options = re.findall(r"[A-D]\.\s*(.+)", raw_output)
-
-#     if not question_match or len(options) != 1:
-#         return {"question": "Invalid format", "options": {}}
-
-#     return {
-#         "question": question_match.group(1).strip(),
-#         "options": {
-#             "a": options[0].strip(),
-#             "b": options[1].strip(),
-#             "c": options[2].strip(),
-#             "d": options[3].strip(),
-#         }
-#     }
-
-# def evaluate_answer(question, answer_text, theory_text):
-#     prompt = f"""
-# Evaluate the answer for the behavioral question based on this theory:
-
-# Theory:
-# {theory_text}
-
-# Question:
-# {question}
-
-# Answer:
-# {answer_text}
-
-# Provide a short interpretation of what this answer reveals about the user.
-# """
-
-#     response = client.chat.completions.create(
-#         model="gpt-4o",
-#         messages=[{"role": "user", "content": prompt}],
-#         temperature=0.7,
-#         max_tokens=300,
-#     )
-
-#     return response.choices[0].message.content.strip()
-
-# def generate_ai_report(qas):
-#     qas_text = "\n".join([
-#         f"Q: {qa['question']}\nA: {qa['answer']}\nNote: {qa['evaluation']}"
-#         for qa in qas if qa["answer"]
-#     ])
-
-#     prompt = f"""
-# You are a behavioral assessment AI. Based on the user's answers and evaluations below, generate a personalized report.
-
-# Q&A with notes:
-# {qas_text}
-
-# Provide the report in sections:
-# - Learning Style
-# - Cognitive Strengths
-# - Personality Traits
-# - Career Recommendations
-# - Personal Growth Tips
-# """
-
-#     response = client.chat.completions.create(
-#         model="gpt-4o",
-#         messages=[{"role": "user", "content": prompt}],
-#         temperature=0.7,
-#         max_tokens=1000,
-#     )
-
-#     return response.choices[0].message.content.strip()
-
-
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import RetrievalQA
+from langchain.schema import SystemMessage, HumanMessage
+from .rag_utils import load_or_create_vectorstore
+from typing import List
 import openai
+import os
 import re
-from django.conf import settings
-from rest_framework.views import APIView
-from rest_framework.response import Response
-# from .models import Assessment
-
-client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+import json
+from django.utils import timezone
 
 MAX_QUESTIONS = 2
 
-def generate_question(theory_text, previous_qas, question_count):
+openai.api_key = os.getenv("OPENAI_API_KEY")  # Or use a hardcoded key temporarily
+client = openai
+
+def generate_question(theory_text, previous_qas, question_count, theory_id):
     if question_count >= MAX_QUESTIONS:
         return {"question": "You have completed all questions.", "options": {}}
+
+    # Load FAISS and retrieve relevant theory chunks
+    db = load_or_create_vectorstore(theory_id, theory_text)
+    retriever = db.as_retriever()
+    relevant_docs = retriever.get_relevant_documents("next behavioral question")
+
+    context = "\n".join([doc.page_content for doc in relevant_docs])
 
     prompt = f"""
 You are a smart educational AI designed to understand user behavior and preferences based on learning theories.
 
-Theory:
-{theory_text}
+Relevant Theory:
+{context}
 
 Previous Q&A:
 {previous_qas if previous_qas else "None"}
@@ -253,12 +71,18 @@ D. <option D>
         }
     }
 
-def evaluate_answer(question, answer_text, theory_text):
-    prompt = f"""
-Evaluate the answer for the behavioral question based on this theory:
 
-Theory:
-{theory_text}
+def evaluate_answer(question, answer_text, theory_text, theory_id):
+    db = load_or_create_vectorstore(theory_id, theory_text)
+    retriever = db.as_retriever()
+    docs = retriever.get_relevant_documents(question)
+    context = "\n".join([doc.page_content for doc in docs])
+
+    prompt = f"""
+Evaluate the answer based on this theory segment:
+
+Theory Context:
+{context}
 
 Question:
 {question}
@@ -266,7 +90,7 @@ Question:
 Answer:
 {answer_text}
 
-Provide a short interpretation of what this answer reveals about the user.
+What does this answer tell about the user?
 """
 
     response = client.chat.completions.create(
@@ -278,31 +102,56 @@ Provide a short interpretation of what this answer reveals about the user.
 
     return response.choices[0].message.content.strip()
 
-def generate_ai_report(qas):
-    qas_text = "\n".join([
-        f"Q: {qa['question']}\nA: {qa['answer']}\nNote: {qa['evaluation']}"
-        for qa in qas if qa["answer"]
-    ])
+def generate_behavior_report_from_evaluations(evaluations: List[str]):
+    if not evaluations:
+        return {"error": "No evaluations available."}
+
+    joined_evals = "\n".join([f"{i+1}. {ev}" for i, ev in enumerate(evaluations)])
 
     prompt = f"""
-You are a behavioral assessment AI. Based on the user's answers and evaluations below, generate a personalized report.
+You are a student assessment AI. Based on the following evaluations from 5 behavioral tests, create a final summary report.
 
-Q&A with notes:
-{qas_text}
+Each evaluation gives insights into a student's:
+- Interest
+- Aptitude
+- Emotional intelligence
+- Motivation
+- Vision
 
-Provide the report in sections:
-- Learning Style
-- Cognitive Strengths
-- Personality Traits
-- Career Recommendations
-- Personal Growth Tips
+Return the report in **pure JSON format** (no markdown, no triple backticks).
+
+Format example:
+{{
+  "Interest": "92% - comment...",
+  "Aptitude": "88% - comment...",
+  "Emotional": "85% - comment...",
+  "Motivation": "89% - comment...",
+  "Vision": "91% - comment...",
+  "CareerIQ360 Index": "8.7/10"
+}}
+
+Evaluations:
+{joined_evals}
 """
 
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-        max_tokens=1000,
+        temperature=0.5,
+        max_tokens=500,
     )
 
-    return response.choices[0].message.content.strip()
+    content = response.choices[0].message.content.strip()
+
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        # Try to extract JSON manually in case of formatting issues
+        match = re.search(r'\{.*\}', content, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except:
+                pass
+        return {"report": content}
+

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import TestListCreateAPIView,TestRetrieveUpdateDestroyAPIView,TheoryListCreateAPIView,TheoryRetrieveUpdateDestroyAPIView,AgeGroupTestTheoryAPIView,AssessmentListCreateView,AssessmentRetrieveUpdateDestroyAPIView,AIQuestionView,AIReportView
+from .views import TestListCreateAPIView,TestRetrieveUpdateDestroyAPIView,TheoryListCreateAPIView,TheoryRetrieveUpdateDestroyAPIView,AgeGroupTestTheoryAPIView,AssessmentListCreateView,AssessmentRetrieveUpdateDestroyAPIView,AIQuestionView,AgeGroupReportAPIView
 
 urlpatterns = [
     path('test/',TestListCreateAPIView.as_view(),name="agegroup-list-create"),
@@ -10,6 +10,6 @@ urlpatterns = [
     path('assessment/<int:pk>/',AssessmentRetrieveUpdateDestroyAPIView.as_view(),name="assessment-retrieve-update-destroy"),
     path('age-group/', AgeGroupTestTheoryAPIView.as_view(), name='age-group-tests-theories'),
     path("ai-assessment/<int:assessment_id>/", AIQuestionView.as_view(), name="ai-question"),
-    path('ai-assessment/<int:assessment_id>/report/', AIReportView.as_view(), name='ai_report'),
+    path('ai-assessment/reports/', AgeGroupReportAPIView.as_view(), name='ai_report'),
 
 ]
