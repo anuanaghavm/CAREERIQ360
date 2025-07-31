@@ -8,6 +8,9 @@ class Theory(models.Model):
 
 class Test(models.Model):
     name = models.TextField()
+    icon = models.ImageField(upload_to='media/icon_images/', null=True, blank=True)
+    description = models.TextField()
+    duration = models.TextField()
 
     def __str__(self):
         return self.name

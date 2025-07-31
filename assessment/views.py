@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Assessment
-from .utils.ai_assessment import generate_question, evaluate_answer,generate_behavior_report_from_evaluations
+from .utils.ai_assessment import generate_question, evaluate_answer,generate_behavior_report_from_evaluations,generate_detailed_assessment_report
 from django.utils import timezone
 import json
 
@@ -60,7 +60,7 @@ class AgeGroupTestTheoryAPIView(APIView):
 
 SESSION_STORE = {}
 QUESTION_ID_COUNTER = {}
-MAX_QUESTIONS = 2
+MAX_QUESTIONS = 3
 
 class AIQuestionView(APIView):
     """
@@ -82,8 +82,10 @@ class AIQuestionView(APIView):
             "assessment_info": {
                 "age_group": assessment.age_group,
                 "test_name": assessment.test.name,
+                "test_description": assessment.test.description,  # <- Ensure this is added
                 "theory_content": assessment.theory.content
             }
+
         })
         question_list = session["qas"]
 
@@ -103,6 +105,8 @@ class AIQuestionView(APIView):
                         question=item["question"],
                         answer_text=selected_text,
                         theory_text=assessment.theory.content,
+                        test_name=assessment.test.name,
+                        test_description=assessment.test.description,
                         theory_id=assessment.theory.id
                     )
                     
@@ -139,10 +143,13 @@ class AIQuestionView(APIView):
             
             question_data = generate_question(
                 theory_text=assessment.theory.content,
+                test_name=assessment.test.name,
+                test_description=assessment.test.description,
                 previous_qas=previous_qas,
                 question_count=len(question_list),
                 theory_id=assessment.theory.id
             )
+
 
             qid = QUESTION_ID_COUNTER.get(assessment_id, 1)
             QUESTION_ID_COUNTER[assessment_id] = qid + 1
@@ -214,109 +221,31 @@ class AgeGroupReportAPIView(APIView):
             "report": report_data
         })
 
+class IndividualAssessmentReportAPIView(APIView):
+    def get(self, request, assessment_id):
+        session = SESSION_STORE.get(assessment_id)
+        if not session:
+            return Response({"error": "Session not found for this assessment."}, status=404)
 
+        if not session.get("completed"):
+            return Response({"error": "Assessment not yet completed."}, status=400)
 
-# class AgeGroupReportView(APIView):
-#     """
-#     Generate comprehensive assessment reports for an age group.
-#     Returns behavior-based JSON reports for each assessment session.
-#     """
+        qas = session.get("qas", [])
+        test_name = session["assessment_info"].get("test_name")
+        test_description = session["assessment_info"].get("test_description") 
+        theory_content = session["assessment_info"].get("theory_content")
 
-#     def get(self, request):
-#         age_group = request.query_params.get('age_group')
+        report_paragraph = generate_detailed_assessment_report(
+            test_name=test_name,
+            theory_description=theory_content,
+            test_description=test_description,
+            qas=qas
+        )
 
-#         if not age_group:
-#             return Response(
-#                 {'error': 'age_group parameter is required.'},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-
-#         assessments = Assessment.objects.filter(age_group=age_group).select_related('test', 'theory')
-
-#         if not assessments.exists():
-#             return Response(
-#                 {'error': f'No assessments found for age group: {age_group}'},
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-
-#         reports = []
-
-#         for assessment in assessments:
-#             session = SESSION_STORE.get(assessment.id)
-
-#             if not session:
-#                 reports.append({
-#                     'assessment_id': assessment.id,
-#                     'test_name': assessment.test.name,
-#                     'status': 'not_started',
-#                     'message': 'Assessment not yet started'
-#                 })
-#                 continue
-
-#             if not session.get("completed"):
-#                 answered = len([qa for qa in session["qas"] if qa.get("answer")])
-#                 total = len(session["qas"])
-
-#                 reports.append({
-#                     'assessment_id': assessment.id,
-#                     'test_name': assessment.test.name,
-#                     'status': 'in_progress',
-#                     'progress': f"{answered}/{total} questions answered",
-#                     'completion_rate': f"{(answered / total * 100):.1f}%"
-#                 })
-#                 continue
-
-#             # ✅ Completed assessment – Generate full behavior report
-#             try:
-#                 comprehensive_report = generate_comprehensive_report(
-#                     qas=session["qas"],
-#                     assessment_info=session["assessment_info"],
-#                     theory_id=assessment.theory.id
-#                 )
-
-#                 answered_questions = [qa for qa in session["qas"] if qa.get("answer")]
-#                 total_time = None
-
-#                 if session.get("started_at") and session.get("completed_at"):
-#                     from datetime import datetime
-#                     start = datetime.fromisoformat(session["started_at"].replace('Z', '+00:00'))
-#                     end = datetime.fromisoformat(session["completed_at"].replace('Z', '+00:00'))
-#                     total_time = str(end - start)
-
-#                 reports.append({
-#                     'assessment_id': assessment.id,
-#                     'test_name': assessment.test.name,
-#                     'age_group': assessment.age_group,
-#                     'status': 'completed',
-#                     'completion_rate': '100%',
-#                     'total_questions': len(session["qas"]),
-#                     'answered_questions': len(answered_questions),
-#                     'assessment_duration': total_time,
-#                     'completed_at': session.get("completed_at"),
-#                     'comprehensive_report': comprehensive_report  # ✅ This is your full behavior-based JSON report
-#                 })
-
-#             except Exception as e:
-#                 reports.append({
-#                     'assessment_id': assessment.id,
-#                     'test_name': assessment.test.name,
-#                     'status': 'error',
-#                     'error': f'Failed to generate report: {str(e)}'
-#                 })
-
-#         # ✅ Summary Stats
-#         completed_reports = [r for r in reports if r.get('status') == 'completed']
-#         in_progress = [r for r in reports if r.get('status') == 'in_progress']
-#         not_started = [r for r in reports if r.get('status') == 'not_started']
-
-#         return Response({
-#             'age_group': age_group,
-#             'summary': {
-#                 'total_assessments': len(assessments),
-#                 'completed': len(completed_reports),
-#                 'in_progress': len(in_progress),
-#                 'not_started': len(not_started)
-#             },
-#             'reports': reports,
-#             'generated_at': timezone.now().isoformat()
-#         }, status=status.HTTP_200_OK)
+        return Response({
+            "assessment_id": assessment_id,
+            "test_name": test_name,
+            "theory_summary": theory_content[:500],  # optional short preview
+            "questions_answered": len([qa for qa in qas if qa.get("answer")]),
+            "report": report_paragraph
+        })

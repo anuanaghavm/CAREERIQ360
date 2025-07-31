@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 import os
 from dotenv import load_dotenv
 load_dotenv()  # reads .env
@@ -45,8 +46,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
     'assessment',
     'corsheaders',
+    'login',
 ]
 
 MIDDLEWARE = [
@@ -82,6 +85,12 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ai_tool.wsgi.application'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
 
 
 # Database
@@ -125,6 +134,8 @@ USE_I18N = True
 
 USE_TZ = True
 
+AUTH_USER_MODEL = 'login.CustomUser'
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -136,3 +147,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
