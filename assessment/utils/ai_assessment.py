@@ -195,49 +195,50 @@
 
 
 # ai_assessment.py
+# ai_assessment.py
+
 from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
-from langchain.chains import RetrievalQA
-from langchain.schema import SystemMessage, HumanMessage
 from .rag_utils import load_or_create_vectorstore
-from typing import List
+from typing import List, Dict
 import openai
 import os
 import re
 import json
-from django.utils import timezone
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+client = openai
 
 MAX_QUESTIONS = 3
+VECTORSTORE_CACHE: Dict[str, FAISS] = {}  # Global in-memory cache
 
-openai.api_key = os.getenv("OPENAI_API_KEY")  # Or use a hardcoded key temporarily
-client = openai
+
+def get_vectorstore(theory_id: str, theory_text: str):
+    if theory_id in VECTORSTORE_CACHE:
+        return VECTORSTORE_CACHE[theory_id]
+    vs = load_or_create_vectorstore(theory_id, theory_text)
+    VECTORSTORE_CACHE[theory_id] = vs
+    return vs
+
 
 def generate_question(theory_text, test_name, test_description, previous_qas, question_count, theory_id):
     if question_count >= MAX_QUESTIONS:
         return {"question": "You have completed all questions.", "options": {}}
 
-    db = load_or_create_vectorstore(theory_id, theory_text)
-    retriever = db.as_retriever()
-    relevant_docs = retriever.get_relevant_documents("next behavioral question")
-
-    context = "\n".join([doc.page_content for doc in relevant_docs])
+    db = get_vectorstore(theory_id, theory_text)
+    docs = db.as_retriever().get_relevant_documents("next behavioral question")
+    context = "\n".join(doc.page_content for doc in docs[:3])
 
     prompt = f"""
-You are a smart educational AI. Generate a behavioral question based on:
-- The learning theory context below
-- The goal of the test: {test_name}
-- Test description: {test_description}
-- Previously answered Q&A (if any)
+Generate the next behavioral multiple choice question for the "{test_name}" test.
 
-Learning Theory:
+Theory:
 {context}
 
 Previous Q&A:
-{previous_qas if previous_qas else "None"}
+{previous_qas or "None"}
 
-Ask the next question in this format:
-
+Format:
 Q: <question>
 A. <option A>
 B. <option B>
@@ -248,53 +249,43 @@ D. <option D>
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
+        temperature=0.6,
         max_tokens=300,
     )
 
-    raw_output = response.choices[0].message.content.strip()
-    question_match = re.search(r"Q:\s*(.+)", raw_output)
-    options = re.findall(r"[A-D]\.\s*(.+)", raw_output)
+    content = response.choices[0].message.content.strip()
+    question_match = re.search(r"Q:\s*(.+)", content)
+    options = re.findall(r"[A-D]\.\s*(.+)", content)
 
     if not question_match or len(options) != 4:
         return {"question": "Invalid format", "options": {}}
 
     return {
         "question": question_match.group(1).strip(),
-        "options": {
-            "a": options[0].strip(),
-            "b": options[1].strip(),
-            "c": options[2].strip(),
-            "d": options[3].strip(),
-        }
+        "options": {k: v.strip() for k, v in zip("abcd", options)}
     }
 
 
 def evaluate_answer(question, answer_text, theory_text, test_name, test_description, theory_id):
-    db = load_or_create_vectorstore(theory_id, theory_text)
-    retriever = db.as_retriever()
-    docs = retriever.get_relevant_documents(question)
-    context = "\n".join([doc.page_content for doc in docs])
+    db = get_vectorstore(theory_id, theory_text)
+    docs = db.as_retriever().get_relevant_documents(question)
+    context = "\n".join(doc.page_content for doc in docs[:3])
 
     prompt = f"""
-Evaluate this answer in the context of:
-- Test Name: {test_name}
-- Test Description: {test_description}
-- Related Theory: {context}
+Evaluate this behavioral answer.
 
-Question:
-{question}
+Test: {test_name}
+Q: {question}
+A: {answer_text}
+Theory Context: {context}
 
-User's Answer:
-{answer_text}
-
-What does this answer reveal about the user's behavioral traits or learning tendencies?
+What behavior trait does this suggest?
 """
 
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
+        temperature=0.5,
         max_tokens=300,
     )
 
@@ -303,41 +294,31 @@ What does this answer reveal about the user's behavioral traits or learning tend
 
 def generate_behavior_report_from_evaluations(evaluations: List[str]):
     if not evaluations:
-        return {"error": "No evaluations available."}
+        return {"error": "No evaluations provided."}
 
     joined_evals = "\n".join([f"{i+1}. {ev}" for i, ev in enumerate(evaluations)])
-
     prompt = f"""
-You are a student assessment AI. Based on the following evaluations from 5 behavioral tests, create a final summary report.
+Generate a JSON report based on 5 behavioral insights.
 
-Each evaluation gives insights into a student's:
-- Interest
-- Aptitude
-- Emotional intelligence
-- Motivation
-- Vision
-
-Return the report in **pure JSON format** (no markdown, no triple backticks).
-
-Format example:
-{{
-  "Interest": "92% - comment...",
-  "Aptitude": "88% - comment...",
-  "Emotional": "85% - comment...",
-  "Motivation": "89% - comment...",
-  "Vision": "91% - comment...",
-  "CareerIQ360 Index": "8.7/10"
-}}
-
-Evaluations:
+Insights:
 {joined_evals}
+
+Return JSON only:
+{{
+  "Interest": "...",
+  "Aptitude": "...",
+  "Emotional": "...",
+  "Motivation": "...",
+  "Vision": "...",
+  "CareerIQ360 Index": "x.x/10"
+}}
 """
 
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.5,
-        max_tokens=500,
+        temperature=0.4,
+        max_tokens=600,
     )
 
     content = response.choices[0].message.content.strip()
@@ -345,55 +326,40 @@ Evaluations:
     try:
         return json.loads(content)
     except json.JSONDecodeError:
-        # Try to extract JSON manually in case of formatting issues
         match = re.search(r'\{.*\}', content, re.DOTALL)
         if match:
             try:
                 return json.loads(match.group())
             except:
-                pass
-        return {"report": content}
+                return {"report": match.group()}
+        return {"error": "Invalid JSON", "raw": content}
 
-def generate_detailed_assessment_report(test_name: str, test_description: str, theory_description: str, qas: List[dict]):
-    answered_qas = [qa for qa in qas if qa.get("answer")]
 
-    if not answered_qas:
-        return "No answered questions available to generate the report."
+def generate_detailed_assessment_report(test_name, test_description, theory_description, qas: List[dict]):
+    answered = [qa for qa in qas if qa.get("answer")]
+    if not answered:
+        return "No answered questions."
 
-    question_answer_pairs = "\n".join(
-        [f"Q{i+1}: {qa['question']}\nA: {qa['answer']}\nInsight: {qa['evaluation']}" for i, qa in enumerate(answered_qas)]
-    )
+    qa_block = "\n".join([f"Q{i+1}: {qa['question']}\nA: {qa['answer']}\nInsight: {qa['evaluation']}" for i, qa in enumerate(answered)])
 
     prompt = f"""
-You are a student assessment AI trained to provide behavioral insights.
+Generate a short narrative behavioral report.
 
-Test Information:
-- Test Name: {test_name}
-- Test Description: {test_description}
+Test: {test_name}
+Description: {test_description}
+Theory: {theory_description}
 
-Theory Summary:
-{theory_description}
+Answered Questions + Insights:
+{qa_block}
 
-Below are the user's answered questions along with evaluations (insights):
-
-{question_answer_pairs}
-
-Based on this information, write a comprehensive behavioral analysis report. Focus on:
-- The user's behavioral traits shown in their answers.
-- Patterns in interest, decision-making, motivation, and emotional response.
-- Strengths or blind spots inferred from the responses.
-- Any notable alignment with the theory or test objectives.
-
-Start your response with:
-"This report evaluates the user's responses for the {test_name} test..."
-Write the report in a **clear paragraph format**, avoiding bullet points.
+Respond in 1 paragraph.
 """
 
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.5,
-        max_tokens=700,
+        max_tokens=600,
     )
 
     return response.choices[0].message.content.strip()

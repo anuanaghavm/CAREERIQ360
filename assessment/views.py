@@ -151,6 +151,7 @@ class AIQuestionView(APIView):
             )
 
 
+
             qid = QUESTION_ID_COUNTER.get(assessment_id, 1)
             QUESTION_ID_COUNTER[assessment_id] = qid + 1
 

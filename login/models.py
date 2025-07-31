@@ -25,18 +25,25 @@ class CustomUserManager(BaseUserManager):
         return user
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+    SECTION_CHOICES = [
+        ("Ages 13-15", "Ages 13-15"),
+        ("Ages 16-18", "Ages 16-18"),
+        ("UG/PG", "UG/PG"),
+        ("Professional", "Professional"),
+    ]
+
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15)
-    address = models.TextField()
+    section = models.CharField(max_length=20, choices=SECTION_CHOICES)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name', 'phone_number', 'address']
+    REQUIRED_FIELDS = ['name', 'phone_number', 'section']  # updated
 
     def __str__(self):
         return self.email
