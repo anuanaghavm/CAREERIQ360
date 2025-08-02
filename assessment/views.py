@@ -265,7 +265,7 @@ MAX_QUESTIONS = 30
 class StaticAIQuestionBatchView(APIView):
     def post(self, request):
         test_name = request.data.get("test_name")
-        section_name = request.data.get("section_name", "middle")  # NEW!
+        section_name = request.data.get("section_name", "Middle School(13-15)")  # NEW!
 
         if test_name not in STATIC_TESTS:
             return Response({"error": f"Invalid test name: {test_name}"}, status=400)
@@ -302,7 +302,7 @@ class StaticAIQuestionBatchView(APIView):
 class StaticAIAnswerBatchView(APIView):
     def post(self, request):
         test_name = request.data.get("test_name")
-        section_name = request.data.get("section_name", "middle")  # NEW!
+        section_name = request.data.get("section_name", "Middle School(13-15)")  # NEW!
         answers = request.data.get("answers", [])
 
         if test_name not in STATIC_TESTS:
@@ -355,7 +355,7 @@ class StaticAIAnswerBatchView(APIView):
 class GenerateAssessmentReportView(APIView):
     def post(self, request):
         test_name = request.data.get("test_name")
-        section_name = request.data.get("section_name", "middle")
+        section_name = request.data.get("section_name", "Middle School(13-15)")
 
         if not test_name or test_name not in STATIC_TESTS:
             return Response({"error": "Invalid or missing test_name."}, status=400)

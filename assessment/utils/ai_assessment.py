@@ -497,7 +497,7 @@ Guidelines:
     # Add others similarly...
 }
 
-def generate_questions(test_name: str, section_name: str = "middle", total: int = 30):
+def generate_questions(test_name: str, section_name: str = "Middle School(13-15)", total: int = 30):
     test_info = STATIC_TESTS[test_name]
     theory_text = test_info["theory"]
     theory_id = test_info["theory_id"]
