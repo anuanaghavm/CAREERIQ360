@@ -18,11 +18,12 @@
 
 from django.urls import path
 
-from .views import StaticAIQuestionBatchView, StaticAIAnswerBatchView
+from .views import StaticAIQuestionBatchView, StaticAIAnswerBatchView ,GenerateAssessmentReportView
 
 urlpatterns = [
     path('generate-questions/', StaticAIQuestionBatchView.as_view(), name='generate-questions'),
     path('submit-answers/', StaticAIAnswerBatchView.as_view(), name='submit-answers'),
+    path("report/", GenerateAssessmentReportView.as_view()),
 ]
 
 

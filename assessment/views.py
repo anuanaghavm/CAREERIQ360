@@ -257,7 +257,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
-from .utils.ai_assessment import generate_questions, evaluate_answers, STATIC_TESTS
+from .utils.ai_assessment import generate_questions, evaluate_answers, STATIC_TESTS,generate_detailed_assessment_report
 
 SESSION_STORE = {}
 MAX_QUESTIONS = 30
@@ -352,107 +352,38 @@ class StaticAIAnswerBatchView(APIView):
             "qas": session["qas"]
         })
 
-# class StaticAIQuestionView(APIView):
-#     """
-#     Generate behavioral questions using STATIC_TESTS (no DB)
-#     """
+class GenerateAssessmentReportView(APIView):
+    def post(self, request):
+        test_name = request.data.get("test_name")
+        section_name = request.data.get("section_name", "middle")
 
-#     def post(self, request):
-#         test_name = request.data.get("test_name")
-#         answer = request.data.get("answer")
-#         question_id = request.data.get("question_id")
+        if not test_name or test_name not in STATIC_TESTS:
+            return Response({"error": "Invalid or missing test_name."}, status=400)
 
-#         if test_name not in STATIC_TESTS:
-#             return Response({"error": f"Invalid test name: {test_name}"}, status=400)
+        session_key = f"{request.session.session_key}-{test_name}-{section_name}"
+        session = SESSION_STORE.get(session_key)
 
-#         session_key = f"{request.session.session_key}-{test_name}"
-#         session = SESSION_STORE.get(session_key, {
-#             "qas": [],
-#             "completed": False,
-#             "started_at": timezone.now().isoformat(),
-#         })
+        if not session:
+            return Response({"error": "Session not found."}, status=404)
 
-#         question_list = session["qas"]
+        if not session.get("completed"):
+            return Response({"error": "Assessment not completed."}, status=400)
 
-#         # Handle submitted answer
-#         if answer and question_id:
-#             for item in question_list:
-#                 if item["question_id"] == question_id:
-#                     if item["answer"] is not None:
-#                         return Response({"error": "Already answered"}, status=400)
+        qas = session.get("qas", [])
+        test_data = STATIC_TESTS[test_name]
+        test_description = test_data["description"]
+        theory_content = test_data["theory"]
 
-#                     selected_text = item["options"].get(answer.lower())
-#                     if not selected_text:
-#                         return Response({"error": "Invalid option."}, status=400)
+        report_paragraph = generate_detailed_assessment_report(
+            test_name=test_name,
+            theory_description=theory_content,
+            test_description=test_description,
+            qas=qas
+        )
 
-#                     evaluation = evaluate_answer(
-#                         test_name=test_name,
-#                         question=item["question"],
-#                         answer_text=selected_text,
-#                     )
-
-#                     item["answer"] = selected_text
-#                     item["selected_option"] = answer.upper()
-#                     item["evaluation"] = evaluation
-#                     item["answered_at"] = timezone.now().isoformat()
-#                     break
-#             else:
-#                 return Response({"error": "Question ID not found."}, status=404)
-
-#         # Check if done
-#         answered_questions = [qa for qa in question_list if qa.get("answer")]
-
-#         if len(answered_questions) >= MAX_QUESTIONS:
-#             session["completed"] = True
-#             session["completed_at"] = timezone.now().isoformat()
-#             SESSION_STORE[session_key] = session
-#             return Response({
-#                 "message": "Assessment completed!",
-#                 "answered_questions": len(answered_questions),
-#                 "completion_rate": f"{(len(answered_questions) / MAX_QUESTIONS) * 100:.1f}%",
-#                 "next_step": "/get-report"
-#             })
-
-#         # Generate next question
-#         if len(question_list) < MAX_QUESTIONS:
-#             previous_qas = "\n".join([
-#                 f"Q: {qa['question']}\nA: {qa['answer']}" 
-#                 for qa in question_list if qa.get("answer")
-#             ])
-
-#             question_data = generate_question(
-#                 test_name=test_name,
-#                 previous_qas=previous_qas,
-#                 question_count=len(question_list),
-#             )
-
-#             qid = QUESTION_ID_COUNTER.get(session_key, 1)
-#             QUESTION_ID_COUNTER[session_key] = qid + 1
-
-#             question_entry = {
-#                 "question_id": qid,
-#                 "question": question_data["question"],
-#                 "options": question_data["options"],
-#                 "answer": None,
-#                 "selected_option": None,
-#                 "evaluation": None,
-#                 "generated_at": timezone.now().isoformat()
-#             }
-
-#             session["qas"].append(question_entry)
-#             SESSION_STORE[session_key] = session
-
-#             return Response({
-#                 "question_id": qid,
-#                 "question": question_data["question"],
-#                 "options": question_data["options"],
-#                 "question_number": len(session["qas"]),
-#                 "total_questions": MAX_QUESTIONS,
-#                 "progress": f"{len(session['qas'])}/{MAX_QUESTIONS}"
-#             })
-
-#         return Response({
-#             "message": "Please complete all current questions before proceeding.",
-#             "answered": len(answered_questions),
-#             "remaining": MAX_QUESTIONS - len(answered_questions)
-#         })
+        return Response({
+            "test_name": test_name,
+            "section_name": section_name,
+            "questions_answered": len([qa for qa in qas if qa.get("answer")]),
+            "report": report_paragraph
+        }, status=200)
