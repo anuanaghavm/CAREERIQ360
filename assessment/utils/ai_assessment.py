@@ -364,6 +364,7 @@
 
 
 # ai_assessment.py
+# ai_assessment.py
 import openai
 import os
 import re
@@ -373,6 +374,8 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from .rag_utils import load_or_create_vectorstore
+import openai
+import os
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 client = openai
@@ -389,76 +392,143 @@ def get_vectorstore(theory_id: str, theory_text: str):
 STATIC_TESTS = {
     "NeuroStyle Index": {
         "description": "Learning preferences & cognitive strengths",
-        "theory": "Based on Kolb’s Learning Styles, VARK model, and Bloom’s Taxonomy",
+        "theory": "Based on Kolb's Learning Styles, VARK model, and Bloom's Taxonomy",
         "theory_id": "neurostyle-index",
         "section": "Middle School(13-15)",
-        "prompt": """You are a psychometrician designing a psychometric test for school students aged 13–16 (grades 8 to 10). Generate, age-appropriate multiple-choice questions that help identify each student's dominant learning style and cognitive preferences based on the following frameworks:
+        "prompt": """You are a psychometrician designing a psychometric test for students aged 13–16 (grades 8–10). Generate 30 different engaging, age-appropriate, multiple-choice questions that assess each student's learning style and cognitive preferences using the following frameworks:
 
-1. *Kolb’s Learning Styles* – Identify if the student is more of a Converger, Diverger, Assimilator, or Accommodator through scenario-based questions.
-2. *VARK Model* – Determine if the student prefers Visual, Auditory, Reading/Writing, or Kinesthetic learning styles using situations from school or home life.
-3. *Bloom’s Taxonomy* – Questions should also tap into different cognitive levels (Remembering, Understanding, Applying, Analyzing, Evaluating, Creating).
+Frameworks:
+
+1. Kolb's Learning Styles (Converger, Diverger, Assimilator, Accommodator) — create 10 different questions. use scenario-based, age-relevant contexts, strictly no repetition. 
+
+2. VARK Model (Visual, Auditory, Reading/Writing, Kinesthetic) —  create 10 different questions, cover all four preferences,  use relatable activities, strictly no repetition.
+
+3. Bloom's Taxonomy (all 6 levels: Remembering, Understanding, Applying, Analyzing, Evaluating, Creating) — create 10 different questions, cover all 6 levels, strictly no repetition.
+
+all 30 questions must be strictly different in contexts, scenarios and answer patterns. 
 
 Guidelines:
-- Each question must have 4 options.
-- Use simple language and familiar situations from school life (e.g., group projects, studying, presentations, sports, hobbies).
-- Avoid technical jargon.
-- Ensure the questions are balanced across the three frameworks. 
- 
-Label: [VARK – Learning Preference]"""
+
+1. Each question must have 4 options (A–D) with varied wording and structure.
+2. Avoid repeating scenarios, phrasing, or answer patterns across questions.
+3. Use diverse contexts (e.g., schoolwork, studying, creative tasks, home life, hobbies, peer interactions, sports, technology use).
+4. Use only simple language relevant to students aged 13–16.
+5. do not add labels towards the end
+6. vary the types of answer options creatively across questions, even when assessing the same learning style.
+
+Format each question as:
+Q1: [Question text]
+A. [Option A]
+B. [Option B]  
+C. [Option C]
+D. [Option D]
+
+Q2: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C]
+D. [Option D]
+
+... continue until Q30"""
     },
     "Cognitive Spark": {
         "description": "Multiple Intelligence & aptitude discovery",
-        "theory": "Based on Gardner’s Multiple Intelligences and CHC model",
+        "theory": "Based on Gardner's Multiple Intelligences and CHC model",
         "theory_id": "cognitive-spark",
         "section": "Middle School(13-15)",
         "prompt": """You are a psychometrician designing a psychometric test for school students aged 13–16 (grades 8 to 10). Generate 30 engaging, age-appropriate multiple-choice questions that assess a student's cognitive aptitude and intellectual strengths, based on the following frameworks:
 
-1. *Gardner’s Multiple Intelligences (MI)* – Identify dominant intelligences such as linguistic, logical-mathematical, spatial, musical, bodily-kinesthetic, interpersonal, intrapersonal, and naturalistic.
-2. *CHC Theory (Cattell–Horn–Carroll)* – Assess broad cognitive abilities including fluid reasoning (Gf), visual-spatial processing (Gv), crystallized intelligence (Gc), auditory processing (Ga), and short-term working memory (Gsm).
+1. Gardner's Multiple Intelligences (MI)
+– Help identify a student's dominant intelligences:
 
-Guidelines:
-- Each question should be situational and relatable to a student's school life, hobbies, or daily experiences.
-- Use language that is simple, engaging, and suitable for middle and high school students.
-- Each question must have 4 answer options (A–D).
-- Ensure a mix of questions across MI types and CHC abilities.
-- Label each question with the related intelligence or CHC domain. (e.g., [MI – Musical], [CHC – Gv])
-"""
+Linguistic, Logical–Mathematical, Spatial, Musical, Bodily–Kinesthetic, Interpersonal, Intrapersonal, Naturalistic
+
+2. CHC Theory (Cattell–Horn–Carroll)
+- Assess broad cognitive abilities:
+
+Gf (Fluid Reasoning), Gv (Visual–Spatial Processing), Gc (Crystallized Intelligence), Ga (Auditory Processing), Gsm (Short-Term Working Memory)
+
+Output Guidelines:
+1. Create 30 age-appropriate, situational multiple-choice questions (A–D options).
+2. Make the questions relatable to school life, hobbies, interests, and everyday thinking patterns of 13–16 year-olds.
+3. Avoid technical terms, overly abstract thinking, or any tasks that require diagrams/images unless they are provided in context.
+4. Do not use image-based or audio-based formats unless the delivery medium allows it.
+5. Keep the tone simple, student-friendly, and engaging.
+6. Ensure a balanced mix of questions across the MI and CHC types.
+7. Make sure each subtype of both MI and CHC is represented at least once in the test.
+8. Avoid overusing any single subtype or scenario more than twice — maintain variety in context and skills being tested.
+
+Format each question as:
+Q1: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C]
+D. [Option D]
+
+Q2: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C]
+D. [Option D]
+
+... continue until Q30"""
     },
     "Emerging Identity Map": {
         "description": "Personality sketch & early identity shaping",
-        "theory": "Based on MBTI (Lite) and Erikson’s theory",
+        "theory": "Based on MBTI (Lite) and Erikson's theory",
         "theory_id": "emerging-identity",
         "section": "Middle School(13-15)",
         "prompt": """You are a psychometric test question generator.
 
-Create scenario-based questions for a personality and identity test called "Emerging Identity Map." The test is meant for school students in classes 8 to 10 (ages 13–16) in India. It is based on:
+Create 30 multiple-choice, scenario-based questions for a personality and identity test called "Emerging Identity Map." This test is designed for students aged 13–16 (Classes 8–10) in India.
 
-1. MBTI (Lite), focusing on:
-   - Introversion (I)
-   - Extraversion (E)
-   - Sensing (S)
-   - Intuition (N)
-   - Thinking (T)
-   - Feeling (F)
-   - Judging (J)
-   - Perceiving (P)
+Purpose:
+To explore early personality markers and identity development cues using:
 
-2. Erikson’s Identity vs. Role Confusion theory.
+1. MBTI Lite (I/E, S/N, T/F, J/P)
+2. Erikson's Identity vs. Role Confusion Stage
 
-*Instructions:*
-- Each question must describe a short, simple real-life scenario relevant to a school student (class, homework, exams, friends, emotions, goals, etc.).
-- Provide 4 multiple-choice options labeled A, B, C, and D.
-- Each option should represent a distinct personality trait (from MBTI or Erikson’s identity stage).
-- Do *not* use psychological jargon like "introvert" or "judging".
-- Use casual, age-appropriate school language and relatable everyday experiences.
-- Avoid “None of the above” or overly similar options."""
+Instructions:
+
+1. Each question must:
+- present a short, simple real-life school-age scenario relevant to a school student (group work, homework, exams, friendships, emotions, goals, decision making, etc.).
+- offer 4 clear options (A-D), each tied to a different mbti trait or erikson theme.
+- be written in casual, age appropriate language for school students aged 13- 16, avoiding any psychological jargon like "introvert" or "feeler".
+- Use relatable everyday experiences and diverse themes like academics, family, future goals, emotions, peer pressure, self expression, school events, etc.
+- Avoid "None of the above" or repeating phrases in options.
+
+2. trait coverage plan:
+Include:
+- 4–5 questions each for the 4 MBTI dichotomies: Introversion (I) vs. Extraversion (E), Sensing (S) vs. Intuition (N), Thinking (T) vs. Feeling (F), Judging (J) vs. Perceiving (P)
+- 6–8 questions exploring Erikson's "Identity vs. Role Confusion" stage (e.g., exploring values, self-concept, goals, fitting in, doubts).
+- 5–6 questions that blend traits from both MBTI and Erikson to test layered identity traits.
+
+3. Keep it Varied and Natural:
+- Avoid repeating similar scenarios or rephrased questions.
+- ensure options are clearly distinct in personality reflection
+- Reflect real dilemmas, peer conflicts, hobbies, or time-management.
+
+Format each question as:
+Q1: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C]
+D. [Option D]
+
+Q2: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C]
+D. [Option D]
+
+... continue until Q30"""
     },
     "Pathfinder RIASEC-Lite": {
         "description": "Interest mapping for career exploration",
         "theory": "Based on Holland Code theory",
         "theory_id": "pathfinder-RIASEC-Lite",
         "section": "Middle School(13-15)",
-        "prompt": """You are a psychometrician designing a psychometric test for school students aged 13–16 (grades 8 to 10). Generate  age-appropriate, engaging multiple-choice questions to help identify students' dominant interest patterns based on Holland’s RIASEC Model (RIASEC-Lite):
+        "prompt": """You are a psychometrician designing a psychometric test for school students aged 13–16 (grades 8 to 10). Generate 30 age-appropriate, engaging multiple-choice questions to help identify students' dominant interest patterns based on Holland's RIASEC Model (RIASEC-Lite):
 
 1. *Realistic (R):* Preference for hands-on, physical, or technical tasks  
 2. *Investigative (I):* Interest in thinking, analyzing, exploring, or solving problems  
@@ -471,48 +541,135 @@ Guidelines:
 - Keep language simple, relatable, and suitable for middle to high school students.
 - Situations should reflect school life, hobbies, future dreams, or group tasks.
 - Each question must have 4 answer choices (A–D), representing different RIASEC traits.
-- Avoid career jargon; focus on behaviors and preferences."""
+- Avoid career jargon; focus on behaviors and preferences.
+
+Format each question as:
+Q1: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C]
+D. [Option D]
+
+Q2: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C]
+D. [Option D]
+
+... continue until Q30"""
     },
     "FutureScope": {
         "description": "Future readiness, grit, adaptability",
         "theory": "Based on Grit Scale, Super's Theory",
         "theory_id": "futurescope",
         "section": "Middle School(13-15)",
-        "prompt": """Future scope 
-
-You are a psychometrician designing a psychometric test for students aged 13–16 (grades 8 to 10). Generate simple, engaging multiple-choice questions that measure behavioral tendencies, career readiness, and cognitive aptitude using the following frameworks:
+        "prompt": """You are a psychometrician designing a psychometric test for students aged 13–16 (grades 8 to 10). Generate 30 simple, engaging multiple-choice questions that measure behavioral tendencies, career readiness, and cognitive aptitude using the following frameworks:
 
 1. *Grit Scale (Angela Duckworth)* – Assess persistence, consistency of effort, and passion for long-term goals.
 2. *CHC Theory (Cattell–Horn–Carroll)* – Evaluate core cognitive aptitudes like fluid reasoning (Gf), crystallized knowledge (Gc), visual-spatial processing (Gv), short-term working memory (Gwm), and processing speed (Gs).
-3. *Super’s Theory of Career Development* – Understand the student’s level of self-awareness, vocational identity, role exploration, and readiness for future planning.
+3. *Super's Theory of Career Development* – Understand the student's level of self-awareness, vocational identity, role exploration, and readiness for future planning.
 
 Guidelines:
 - Questions should use relatable, school-life scenarios (e.g., study habits, long-term projects, leadership roles, future dreams).
 - Each question must have 4 options (A–D), reflecting varying levels or expressions of the trait being measured.
 - Language must be age-appropriate and friendly, with no technical jargon.
 - Distribute questions across all three frameworks.
-- Label each question with its corresponding psychological dimension (e.g., [Grit – Consistency], [CHC – Gf], [Super – Career Maturity]).
-"""
+
+Format each question as:
+Q1: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C]
+D. [Option D]
+
+Q2: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C]
+D. [Option D]
+
+... continue until Q30"""
     },
-    # Add others similarly...
 }
 
+def fetch_questions(batch_prompt):
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": batch_prompt}],
+        temperature=0.6,
+        max_tokens=3000,  # Increased token limit
+    )
+    return response.choices[0].message.content.strip()
+
+def parse_questions_from_content(content: str) -> List[dict]:
+    """Parse questions from AI response content"""
+    questions = []
+    
+    # Split by question numbers (Q1:, Q2:, etc.)
+    question_blocks = re.split(r'\n(?=Q\d+:)', content.strip())
+    
+    for block in question_blocks:
+        if not block.strip():
+            continue
+            
+        lines = [line.strip() for line in block.strip().split('\n') if line.strip()]
+        
+        if len(lines) < 5:  # Need at least question + 4 options
+            continue
+        
+        # Extract question (first line)
+        question_line = lines[0]
+        if ':' in question_line:
+            question = question_line.split(':', 1)[1].strip()
+        else:
+            question = question_line.strip()
+        
+        # Extract options
+        options = {}
+        option_letters = ['A', 'B', 'C', 'D']
+        
+        for i, letter in enumerate(option_letters):
+            if i + 1 < len(lines):
+                option_line = lines[i + 1]
+                # Remove the letter prefix (A., B., etc.)
+                if option_line.startswith(f"{letter}.") or option_line.startswith(f"{letter})"):
+                    option_text = option_line[2:].strip()
+                elif option_line.startswith(f"{letter}:"):
+                    option_text = option_line[2:].strip()
+                else:
+                    option_text = option_line.strip()
+                
+                options[letter.lower()] = option_text
+        
+        # Only add if we have all 4 options
+        if len(options) == 4 and question:
+            questions.append({
+                "question": question,
+                "options": options
+            })
+    
+    return questions
+
 def generate_questions(test_name: str, section_name: str = "Middle School(13-15)", total: int = 30):
+    """Generate exactly 30 questions for the given test"""
     test_info = STATIC_TESTS[test_name]
     theory_text = test_info["theory"]
     theory_id = test_info["theory_id"]
     prompt_intro = test_info.get("prompt", "")
 
-    db = get_vectorstore(theory_id, theory_text)
-    docs = db.as_retriever().get_relevant_documents("behavioral question")
-    context = "\n".join(doc.page_content for doc in docs[:3])
+    # Get context from vectorstore
+    try:
+        db = get_vectorstore(theory_id, theory_text)
+        docs = db.as_retriever().get_relevant_documents("behavioral question")
+        context = "\n".join(doc.page_content for doc in docs[:3])
+    except Exception as e:
+        print(f"Error getting vectorstore context: {e}")
+        context = theory_text  # Fallback to theory text
 
     all_questions = []
+    max_attempts = 3  # Maximum attempts to get 30 questions
 
-    batch_size = 10
-    num_batches = total // batch_size
-
-    for i in range(num_batches):
+    for attempt in range(max_attempts):
         full_prompt = f"""
 You are generating psychometric questions for the "{section_name}" section.
 
@@ -521,34 +678,86 @@ You are generating psychometric questions for the "{section_name}" section.
 Use this theory context as reference:
 {context}
 
-Generate {batch_size} multiple choice behavioral questions.
+IMPORTANT: You must generate exactly 30 multiple choice behavioral questions. Number them Q1 through Q30.
 
-Format:
-Q: <question>
-A. <option A>
-B. <option B>
-C. <option C>
-D. <option D>
+Each question must follow this exact format:
+Q1: [Question text here]
+A. [Option A text]
+B. [Option B text] 
+C. [Option C text]
+D. [Option D text]
+
+Q2: [Question text here]
+A. [Option A text]
+B. [Option B text]
+C. [Option C text] 
+D. [Option D text]
+
+Continue this pattern until Q30. Do not include any other text or explanations.
 """
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": full_prompt}],
-            temperature=0.6,
-            max_tokens=2000,
-        )
+        
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": full_prompt}],
+                temperature=0.6,
+                max_tokens=4000,  # Increased for 30 questions
+            )
 
-        content = response.choices[0].message.content.strip()
-        questions_raw = re.split(r"(?:^|\n)(?=Q[:\s])", content.strip(), flags=re.IGNORECASE)
+            content = response.choices[0].message.content.strip()
+            questions = parse_questions_from_content(content)
+            
+            if len(questions) >= total:
+                all_questions = questions[:total]  # Take exactly 30 questions
+                break
+            else:
+                print(f"Attempt {attempt + 1}: Only got {len(questions)} questions, retrying...")
+                all_questions.extend(questions)
+                
+        except Exception as e:
+            print(f"Error in attempt {attempt + 1}: {e}")
+            continue
 
-        for block in questions_raw[1:]:
-            lines = block.strip().split("\n")
-            if len(lines) >= 5:
-                question = lines[0].strip()
-                options = dict(zip("abcd", [line[2:].strip() for line in lines[1:5]]))
-                all_questions.append({"question": question, "options": options})
+    # If we still don't have enough questions, generate additional ones
+    while len(all_questions) < total:
+        remaining = total - len(all_questions)
+        
+        additional_prompt = f"""
+Generate {remaining} additional multiple choice behavioral questions for the "{section_name}" section about {test_name}.
 
-    return all_questions
+Use this theory: {theory_text}
 
+Format each question as:
+Q{len(all_questions) + 1}: [Question text]
+A. [Option A]
+B. [Option B]
+C. [Option C] 
+D. [Option D]
+
+Continue numbering from Q{len(all_questions) + 1} to Q{total}.
+"""
+        
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": additional_prompt}],
+                temperature=0.7,
+                max_tokens=2000,
+            )
+            
+            content = response.choices[0].message.content.strip()
+            additional_questions = parse_questions_from_content(content)
+            all_questions.extend(additional_questions)
+            
+        except Exception as e:
+            print(f"Error generating additional questions: {e}")
+            break
+
+    # Ensure we have exactly the requested number of questions
+    final_questions = all_questions[:total]
+    
+    print(f"Generated {len(final_questions)} questions for {test_name}")
+    return final_questions
 
 def evaluate_answers(test_name: str, qas_with_answers: List[dict], section_name: str = "middle"):
     theory = STATIC_TESTS[test_name]["theory"]
@@ -581,7 +790,6 @@ Give one insight per question:
 
     lines = response.choices[0].message.content.strip().split("\n")
     return [line.partition(".")[2].strip() for line in lines if "." in line]
-
 
 def generate_detailed_assessment_report(test_name, test_description, theory_description, qas: List[dict]):
     answered = [qa for qa in qas if qa.get("answer")]

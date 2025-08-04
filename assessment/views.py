@@ -257,25 +257,42 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
-from .utils.ai_assessment import generate_questions, evaluate_answers, STATIC_TESTS,generate_detailed_assessment_report
+from .utils.ai_assessment import generate_questions, evaluate_answers, STATIC_TESTS, generate_detailed_assessment_report
+from login.models import CustomUser
+import json
 
 SESSION_STORE = {}
+REPORTS_STORE = {}  # New store for reports
 MAX_QUESTIONS = 30
 
 class StaticAIQuestionBatchView(APIView):
     def post(self, request):
         test_name = request.data.get("test_name")
-        section_name = request.data.get("section_name", "Middle School(13-15)")  # NEW!
+        section_name = request.data.get("section_name", "Middle School(13-15)")
+        uuid = request.data.get("uuid")  # NEW!
 
         if test_name not in STATIC_TESTS:
             return Response({"error": f"Invalid test name: {test_name}"}, status=400)
 
-        session_key = f"{request.session.session_key}-{test_name}-{section_name}"
+        # Validate UUID exists
+        if not uuid:
+            return Response({"error": "UUID is required"}, status=400)
+        
+        try:
+            user = CustomUser.objects.get(uuid=uuid)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Invalid UUID"}, status=404)
+
+        # Create session key with UUID
+        session_key = f"{uuid}-{test_name}-{section_name}"
         session = {
+            "uuid": uuid,  # Store UUID in session
+            "user_email": user.email,  # Store user email for reference
             "qas": [],
             "completed": False,
             "started_at": timezone.now().isoformat(),
             "section": section_name,
+            "test_name": test_name,
         }
 
         qas = generate_questions(test_name, section_name=section_name, total=MAX_QUESTIONS)
@@ -293,6 +310,7 @@ class StaticAIQuestionBatchView(APIView):
         return Response({
             "test_name": test_name,
             "section": section_name,
+            "uuid": uuid,
             "questions": qas,
             "total": MAX_QUESTIONS,
             "progress": f"0/{MAX_QUESTIONS}"
@@ -302,13 +320,17 @@ class StaticAIQuestionBatchView(APIView):
 class StaticAIAnswerBatchView(APIView):
     def post(self, request):
         test_name = request.data.get("test_name")
-        section_name = request.data.get("section_name", "Middle School(13-15)")  # NEW!
+        section_name = request.data.get("section_name", "Middle School(13-15)")
+        uuid = request.data.get("uuid")  # NEW!
         answers = request.data.get("answers", [])
 
         if test_name not in STATIC_TESTS:
             return Response({"error": f"Invalid test name: {test_name}"}, status=400)
 
-        session_key = f"{request.session.session_key}-{test_name}-{section_name}"
+        if not uuid:
+            return Response({"error": "UUID is required"}, status=400)
+
+        session_key = f"{uuid}-{test_name}-{section_name}"
         session = SESSION_STORE.get(session_key)
 
         if not session or not session.get("qas"):
@@ -347,6 +369,7 @@ class StaticAIAnswerBatchView(APIView):
 
         return Response({
             "message": "Answers recorded.",
+            "uuid": uuid,
             "answered": len(qas_with_answers),
             "completed": session["completed"],
             "qas": session["qas"]
@@ -356,11 +379,15 @@ class GenerateAssessmentReportView(APIView):
     def post(self, request):
         test_name = request.data.get("test_name")
         section_name = request.data.get("section_name", "Middle School(13-15)")
+        uuid = request.data.get("uuid")  # NEW!
 
         if not test_name or test_name not in STATIC_TESTS:
             return Response({"error": "Invalid or missing test_name."}, status=400)
 
-        session_key = f"{request.session.session_key}-{test_name}-{section_name}"
+        if not uuid:
+            return Response({"error": "UUID is required"}, status=400)
+
+        session_key = f"{uuid}-{test_name}-{section_name}"
         session = SESSION_STORE.get(session_key)
 
         if not session:
@@ -381,9 +408,92 @@ class GenerateAssessmentReportView(APIView):
             qas=qas
         )
 
+        # Store the report with UUID
+        report_key = f"{uuid}-{test_name}-{section_name}-report"
+        report_data = {
+            "uuid": uuid,
+            "user_email": session.get("user_email"),
+            "test_name": test_name,
+            "section_name": section_name,
+            "report": report_paragraph,
+            "questions_answered": len([qa for qa in qas if qa.get("answer")]),
+            "generated_at": timezone.now().isoformat(),
+            "qas": qas,  # Store questions and answers
+            "test_description": test_description,
+            "theory_content": theory_content
+        }
+        
+        REPORTS_STORE[report_key] = report_data
+
         return Response({
             "test_name": test_name,
             "section_name": section_name,
+            "uuid": uuid,
             "questions_answered": len([qa for qa in qas if qa.get("answer")]),
-            "report": report_paragraph
+            "report": report_paragraph,
+            "report_id": report_key
         }, status=200)
+
+# NEW! View to retrieve stored reports
+class GetUserReportsView(APIView):
+    def get(self, request, uuid):
+        try:
+            user = CustomUser.objects.get(uuid=uuid)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Invalid UUID"}, status=404)
+
+        # Get all reports for this UUID
+        user_reports = []
+        for report_key, report_data in REPORTS_STORE.items():
+            if report_data.get("uuid") == str(uuid):
+                user_reports.append({
+                    "report_id": report_key,
+                    "test_name": report_data.get("test_name"),
+                    "section_name": report_data.get("section_name"),
+                    "generated_at": report_data.get("generated_at"),
+                    "questions_answered": report_data.get("questions_answered")
+                })
+
+        return Response({
+            "uuid": str(uuid),
+            "user_email": user.email,
+            "reports": user_reports
+        })
+
+# NEW! View to get a specific report
+class GetSpecificReportView(APIView):
+    def get(self, request, report_id):
+        report_data = REPORTS_STORE.get(report_id)
+        
+        if not report_data:
+            return Response({"error": "Report not found"}, status=404)
+
+        return Response(report_data)
+
+# NEW! View to get user's assessment sessions
+class GetUserSessionsView(APIView):
+    def get(self, request, uuid):
+        try:
+            user = CustomUser.objects.get(uuid=uuid)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Invalid UUID"}, status=404)
+
+        # Get all sessions for this UUID
+        user_sessions = []
+        for session_key, session_data in SESSION_STORE.items():
+            if session_data.get("uuid") == str(uuid):
+                user_sessions.append({
+                    "session_key": session_key,
+                    "test_name": session_data.get("test_name"),
+                    "section": session_data.get("section"),
+                    "completed": session_data.get("completed"),
+                    "started_at": session_data.get("started_at"),
+                    "completed_at": session_data.get("completed_at"),
+                    "questions_answered": len([qa for qa in session_data.get("qas", []) if qa.get("answer")])
+                })
+
+        return Response({
+            "uuid": str(uuid),
+            "user_email": user.email,
+            "sessions": user_sessions
+        })

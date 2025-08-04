@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, name, phone_number, address, password=None):
+    def create_user(self, email, name, phone_number, section, password=None):
         if not email:
             raise ValueError("Users must have an email address")
         email = self.normalize_email(email)
@@ -11,14 +11,14 @@ class CustomUserManager(BaseUserManager):
             email=email,
             name=name,
             phone_number=phone_number,
-            address=address
+            section=section
         )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, name, phone_number, address, password):
-        user = self.create_user(email, name, phone_number, address, password)
+    def create_superuser(self, email, name, phone_number, section, password):
+        user = self.create_user(email, name, phone_number, section, password)
         user.is_superuser = True
         user.is_staff = True
         user.save(using=self._db)
