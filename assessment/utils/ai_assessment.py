@@ -395,26 +395,21 @@ STATIC_TESTS = {
         "theory": "Based on Kolb's Learning Styles, VARK model, and Bloom's Taxonomy",
         "theory_id": "neurostyle-index",
         "section": "Middle School(13-15)",
-        "prompt": """You are a psychometrician designing a psychometric test for students aged 13–16 (grades 8–10). Generate 30 different engaging, age-appropriate, multiple-choice questions that assess each student's learning style and cognitive preferences using the following frameworks:
+        "prompt": """CRITICAL: Generate 30 COMPLETELY UNIQUE questions for NeuroStyle Index test. Each question must be ENTIRELY DIFFERENT from any previous version - different scenarios, contexts, wording, and situations.
 
-Frameworks:
+You are creating questions for middle school students (13-15 years) to assess learning preferences using:
 
-1. Kolb's Learning Styles (Converger, Diverger, Assimilator, Accommodator) — create 10 different questions. use scenario-based, age-relevant contexts, strictly no repetition. 
+1. Kolb's Learning Styles: Converger, Diverger, Assimilator, Accommodator (10 questions)
+2. VARK Model: Visual, Auditory, Reading/Writing, Kinesthetic (10 questions)  
+3. Bloom's Taxonomy: Remember, Understand, Apply, Analyze, Evaluate, Create (10 questions)
 
-2. VARK Model (Visual, Auditory, Reading/Writing, Kinesthetic) —  create 10 different questions, cover all four preferences,  use relatable activities, strictly no repetition.
+UNIQUENESS REQUIREMENTS:
+- Use completely different school situations each time (math class, science lab, art project, sports, group work, homework, exams, presentations, etc.)
+- Vary question structures: "When you...", "If your teacher...", "During a project...", "While studying..."
+- Use diverse contexts: classroom, home study, extracurricular activities, peer interactions, technology use
+- Ensure each answer choice reflects different learning preferences clearly
 
-3. Bloom's Taxonomy (all 6 levels: Remembering, Understanding, Applying, Analyzing, Evaluating, Creating) — create 10 different questions, cover all 6 levels, strictly no repetition.
-
-all 30 questions must be strictly different in contexts, scenarios and answer patterns. 
-
-Guidelines:
-
-1. Each question must have 4 options (A–D) with varied wording and structure.
-2. Avoid repeating scenarios, phrasing, or answer patterns across questions.
-3. Use diverse contexts (e.g., schoolwork, studying, creative tasks, home life, hobbies, peer interactions, sports, technology use).
-4. Use only simple language relevant to students aged 13–16.
-5. do not add labels towards the end
-6. vary the types of answer options creatively across questions, even when assessing the same learning style.
+MANDATORY: Each question must be set in a DIFFERENT scenario/context. No repetition of situations or phrasings.
 
 Format each question as:
 Q1: [Question text]
@@ -423,40 +418,27 @@ B. [Option B]
 C. [Option C]
 D. [Option D]
 
-Q2: [Question text]
-A. [Option A]
-B. [Option B]
-C. [Option C]
-D. [Option D]
-
-... continue until Q30"""
+Continue until Q30 with completely unique scenarios."""
     },
     "Cognitive Spark": {
         "description": "Multiple Intelligence & aptitude discovery",
         "theory": "Based on Gardner's Multiple Intelligences and CHC model",
         "theory_id": "cognitive-spark",
         "section": "Middle School(13-15)",
-        "prompt": """You are a psychometrician designing a psychometric test for school students aged 13–16 (grades 8 to 10). Generate 30 engaging, age-appropriate multiple-choice questions that assess a student's cognitive aptitude and intellectual strengths, based on the following frameworks:
+        "prompt": """CRITICAL: Generate 30 COMPLETELY UNIQUE questions for Cognitive Spark test. Each question must be ENTIRELY DIFFERENT from any previous version.
 
-1. Gardner's Multiple Intelligences (MI)
-– Help identify a student's dominant intelligences:
+You are creating questions for middle school students (13-15 years) to assess cognitive aptitude using:
 
-Linguistic, Logical–Mathematical, Spatial, Musical, Bodily–Kinesthetic, Interpersonal, Intrapersonal, Naturalistic
+1. Gardner's Multiple Intelligences: Linguistic, Logical-Mathematical, Spatial, Musical, Bodily-Kinesthetic, Interpersonal, Intrapersonal, Naturalistic
+2. CHC Theory: Fluid Reasoning (Gf), Visual-Spatial (Gv), Crystallized Intelligence (Gc), Auditory Processing (Ga), Working Memory (Gsm)
 
-2. CHC Theory (Cattell–Horn–Carroll)
-- Assess broad cognitive abilities:
+UNIQUENESS REQUIREMENTS:
+- Create completely different scenarios each time: different subjects, different school activities, different problem-solving situations
+- Vary question contexts: classroom activities, extracurricular clubs, home projects, social situations, creative tasks
+- Use diverse intelligence indicators: word games, math puzzles, spatial challenges, music activities, physical coordination, social understanding, self-reflection, nature observation
+- Each scenario must be COMPLETELY DIFFERENT from previous versions
 
-Gf (Fluid Reasoning), Gv (Visual–Spatial Processing), Gc (Crystallized Intelligence), Ga (Auditory Processing), Gsm (Short-Term Working Memory)
-
-Output Guidelines:
-1. Create 30 age-appropriate, situational multiple-choice questions (A–D options).
-2. Make the questions relatable to school life, hobbies, interests, and everyday thinking patterns of 13–16 year-olds.
-3. Avoid technical terms, overly abstract thinking, or any tasks that require diagrams/images unless they are provided in context.
-4. Do not use image-based or audio-based formats unless the delivery medium allows it.
-5. Keep the tone simple, student-friendly, and engaging.
-6. Ensure a balanced mix of questions across the MI and CHC types.
-7. Make sure each subtype of both MI and CHC is represented at least once in the test.
-8. Avoid overusing any single subtype or scenario more than twice — maintain variety in context and skills being tested.
+DISTRIBUTION: Cover all 8 MI types and 5 CHC abilities across 30 questions with varied difficulty and contexts.
 
 Format each question as:
 Q1: [Question text]
@@ -465,48 +447,31 @@ B. [Option B]
 C. [Option C]
 D. [Option D]
 
-Q2: [Question text]
-A. [Option A]
-B. [Option B]
-C. [Option C]
-D. [Option D]
-
-... continue until Q30"""
+Continue until Q30 with completely unique scenarios."""
     },
     "Emerging Identity Map": {
         "description": "Personality sketch & early identity shaping",
         "theory": "Based on MBTI (Lite) and Erikson's theory",
         "theory_id": "emerging-identity",
         "section": "Middle School(13-15)",
-        "prompt": """You are a psychometric test question generator.
+        "prompt": """CRITICAL: Generate 30 COMPLETELY UNIQUE questions for Emerging Identity Map test. Each question must be ENTIRELY DIFFERENT from any previous version.
 
-Create 30 multiple-choice, scenario-based questions for a personality and identity test called "Emerging Identity Map." This test is designed for students aged 13–16 (Classes 8–10) in India.
+You are creating questions for middle school students (13-15 years) to assess personality and identity development using:
 
-Purpose:
-To explore early personality markers and identity development cues using:
+1. MBTI Lite: Introversion/Extraversion, Sensing/Intuition, Thinking/Feeling, Judging/Perceiving
+2. Erikson's Identity vs Role Confusion: self-concept, values exploration, future goals, peer relationships, independence
 
-1. MBTI Lite (I/E, S/N, T/F, J/P)
-2. Erikson's Identity vs. Role Confusion Stage
+UNIQUENESS REQUIREMENTS:
+- Create completely different life scenarios each time: different social situations, different decisions, different conflicts, different goals
+- Vary contexts: family situations, friend groups, school events, personal choices, future planning, hobby selection, value decisions
+- Use diverse personality indicators: social preferences, decision-making styles, emotional responses, planning approaches, conflict resolution
+- Each scenario must be COMPLETELY DIFFERENT from previous versions
+- Avoid psychological jargon - use teen-friendly language
 
-Instructions:
-
-1. Each question must:
-- present a short, simple real-life school-age scenario relevant to a school student (group work, homework, exams, friendships, emotions, goals, decision making, etc.).
-- offer 4 clear options (A-D), each tied to a different mbti trait or erikson theme.
-- be written in casual, age appropriate language for school students aged 13- 16, avoiding any psychological jargon like "introvert" or "feeler".
-- Use relatable everyday experiences and diverse themes like academics, family, future goals, emotions, peer pressure, self expression, school events, etc.
-- Avoid "None of the above" or repeating phrases in options.
-
-2. trait coverage plan:
-Include:
-- 4–5 questions each for the 4 MBTI dichotomies: Introversion (I) vs. Extraversion (E), Sensing (S) vs. Intuition (N), Thinking (T) vs. Feeling (F), Judging (J) vs. Perceiving (P)
-- 6–8 questions exploring Erikson's "Identity vs. Role Confusion" stage (e.g., exploring values, self-concept, goals, fitting in, doubts).
-- 5–6 questions that blend traits from both MBTI and Erikson to test layered identity traits.
-
-3. Keep it Varied and Natural:
-- Avoid repeating similar scenarios or rephrased questions.
-- ensure options are clearly distinct in personality reflection
-- Reflect real dilemmas, peer conflicts, hobbies, or time-management.
+DISTRIBUTION: 
+- MBTI traits: 4-5 questions each for I/E, S/N, T/F, J/P
+- Erikson themes: 6-8 questions on identity exploration
+- Blended questions: 4-6 questions combining both frameworks
 
 Format each question as:
 Q1: [Question text]
@@ -515,13 +480,7 @@ B. [Option B]
 C. [Option C]
 D. [Option D]
 
-Q2: [Question text]
-A. [Option A]
-B. [Option B]
-C. [Option C]
-D. [Option D]
-
-... continue until Q30"""
+Continue until Q30 with completely unique scenarios."""
     },
     "Pathfinder RIASEC-Lite": {
         "description": "Interest mapping for career exploration",
@@ -566,7 +525,7 @@ D. [Option D]
         "prompt": """You are a psychometrician designing a psychometric test for students aged 13–16 (grades 8 to 10). Generate 30 simple, engaging multiple-choice questions that measure behavioral tendencies, career readiness, and cognitive aptitude using the following frameworks:
 
 1. *Grit Scale (Angela Duckworth)* – Assess persistence, consistency of effort, and passion for long-term goals.
-2. *CHC Theory (Cattell–Horn–Carroll)* – Evaluate core cognitive aptitudes like fluid reasoning (Gf), crystallized knowledge (Gc), visual-spatial processing (Gv), short-term working memory (Gwm), and processing speed (Gs).
+2. *CHC Theory (Cattell–Horn–Carroll)* – Evaluate core cognitive abilities like fluid reasoning (Gf), crystallized knowledge (Gc), visual-spatial processing (Gv), short-term working memory (Gwm), and processing speed (Gs).
 3. *Super's Theory of Career Development* – Understand the student's level of self-awareness, vocational identity, role exploration, and readiness for future planning.
 
 Guidelines:
@@ -594,7 +553,7 @@ D. [Option D]
 
 def fetch_questions(batch_prompt):
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=[{"role": "user", "content": batch_prompt}],
         temperature=0.6,
         max_tokens=3000,  # Increased token limit
@@ -698,7 +657,7 @@ Continue this pattern until Q30. Do not include any other text or explanations.
         
         try:
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o",
                 messages=[{"role": "user", "content": full_prompt}],
                 temperature=0.6,
                 max_tokens=4000,  # Increased for 30 questions
@@ -739,7 +698,7 @@ Continue numbering from Q{len(all_questions) + 1} to Q{total}.
         
         try:
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o",
                 messages=[{"role": "user", "content": additional_prompt}],
                 temperature=0.7,
                 max_tokens=2000,
@@ -782,7 +741,7 @@ Give one insight per question:
 """
 
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.5,
         max_tokens=1500,
