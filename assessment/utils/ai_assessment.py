@@ -364,8 +364,6 @@
 
 
 # ai_assessment.py
-# ai_assessment.py
-# ai_assessment.py
 import openai
 import os
 import re
@@ -398,7 +396,7 @@ STATIC_TESTS ={
         "section": "Middle School(13-15)",
         "prompt": """You are creating a learning style assessment for 13-15 year old students based on Kolb's Learning Styles (Concrete Experience, Reflective Observation, Abstract Conceptualization, Active Experimentation), VARK model (Visual, Auditory, Reading/Writing, Kinesthetic), and Bloom's Taxonomy levels.
 
-Create 30 COMPLETELY UNIQUE questions that explore how students naturally learn and process information. Each question must test a different aspect of learning preference.
+Create 30 COMPLETELY UNIQUE questions that explore how students naturally learn and process information. Each question must test a different aspect of learning preference using TOTALLY DIFFERENT scenarios.
 
 THEORY MAPPING:
 - Visual learners: prefer diagrams, charts, demonstrations, seeing examples
@@ -406,15 +404,37 @@ THEORY MAPPING:
 - Reading/Writing learners: prefer text, notes, written instructions, lists
 - Kinesthetic learners: prefer hands-on activities, movement, trial-and-error
 
-QUESTION CATEGORIES (use 6-8 questions from each):
-1. Information Processing (how they take in new info)
-2. Memory & Retention (how they remember best)
-3. Problem Solving (their natural approach)  
-4. Study Preferences (optimal learning environment)
-5. Communication Style (how they express understanding)
-
-Use these DIVERSE scenarios (each question must use a DIFFERENT scenario):
-School subjects, hobbies, technology, social situations, family activities, sports, creative arts, daily tasks, future planning, entertainment choices, problem-solving situations, skill learning, information seeking, decision making, expressing ideas, understanding concepts, remembering information, organizing thoughts, processing emotions, handling challenges.
+MANDATORY: Use these 30 COMPLETELY DIFFERENT scenarios (one per question):
+1. Learning to cook a new recipe
+2. Understanding a video game strategy
+3. Remembering phone numbers
+4. Planning a birthday party
+5. Learning dance moves
+6. Understanding news events
+7. Remembering shopping lists
+8. Learning to drive a car
+9. Understanding movie plots
+10. Organizing your bedroom
+11. Learning magic tricks
+12. Understanding sports rules
+13. Remembering appointments
+14. Learning skateboard tricks
+15. Understanding weather patterns
+16. Memorizing song lyrics
+17. Learning card games
+18. Understanding directions to new places
+19. Remembering people's names
+20. Learning photography techniques
+21. Understanding science experiments
+22. Memorizing passwords
+23. Learning knitting/crafting
+24. Understanding historical events
+25. Remembering book characters
+26. Learning bike repair
+27. Understanding math concepts
+28. Memorizing vocabulary words
+29. Learning computer shortcuts
+30. Understanding art techniques
 
 ANSWER PATTERN (rotate these 4 types):
 Type A (Visual): "I prefer seeing/watching/looking at examples"
@@ -424,20 +444,15 @@ Type D (Kinesthetic): "I learn by doing/trying/practicing it myself"
 
 FORMAT REQUIREMENTS:
 - Use simple vocabulary (grade 7-8 reading level)
-- Each question explores a different learning situation
-- No repeated contexts or scenarios
+- Each question explores a completely different learning situation
+- No repeated contexts or scenarios allowed
 - Questions should reveal natural learning preferences
 - Options should be 8-12 words maximum
 - Focus on "how" and "what helps you" rather than "what should you do"
 
-EXAMPLE:
-Q1: When learning to use a new phone app, what helps you most?
-A. Watching tutorial videos or screenshots
-B. Having someone explain each feature to me
-C. Reading the help guide step by step
-D. Opening the app and trying different buttons
+CRITICAL: Every question must use a scenario from the list above. No exceptions.
 
-Generate exactly 30 questions numbered Q1-Q30 with completely different scenarios."""
+Generate exactly 30 questions numbered Q1-Q30 with the specified unique scenarios."""
     },
 
     "Cognitive Spark": {
@@ -447,7 +462,7 @@ Generate exactly 30 questions numbered Q1-Q30 with completely different scenario
         "section": "Middle School(13-15)",
         "prompt": """You are creating a multiple intelligence assessment for 13-15 year olds based on Gardner's 8 Intelligences and the CHC (Cattell-Horn-Carroll) model of cognitive abilities.
 
-Create 30 COMPLETELY UNIQUE questions that identify students' natural strengths and interests across different intelligence areas.
+Create 30 COMPLETELY UNIQUE questions that identify students' natural strengths and interests across different intelligence areas using TOTALLY DIFFERENT scenarios.
 
 GARDNER'S 8 INTELLIGENCES TO ASSESS:
 1. Linguistic (words, language, reading, writing)
@@ -459,44 +474,52 @@ GARDNER'S 8 INTELLIGENCES TO ASSESS:
 7. Intrapersonal (self-awareness, reflection, independence)
 8. Naturalistic (nature, animals, environment, patterns)
 
-QUESTION DISTRIBUTION (3-4 questions per intelligence):
-- Each question must target a specific intelligence
-- Use diverse, relatable scenarios for teens
-- Focus on what they naturally enjoy and excel at
-- Avoid academic jargon - use everyday situations
-
-DIVERSE SCENARIO CATEGORIES:
-Free time activities, school projects, social situations, creative tasks, problem-solving, entertainment choices, hobby selection, volunteer work, skill development, future interests, daily challenges, learning opportunities, self-expression, helping others, exploring interests.
+MANDATORY: Use these 30 COMPLETELY DIFFERENT scenarios (one per question):
+1. Weekend free time activity choice
+2. Ideal summer job selection  
+3. Favorite podcast topic
+4. Dream bedroom decoration
+5. Perfect pet choice
+6. Ideal board game type
+7. Favorite YouTube content
+8. Best vacation destination
+9. Preferred hobby to start
+10. Ideal superhero power
+11. Best way to earn money
+12. Favorite weather activity
+13. Perfect birthday gift to receive
+14. Best club to join at school
+15. Ideal talent show act
+16. Perfect volunteer opportunity
+17. Best way to help a sad friend
+18. Ideal dinner party theme
+19. Perfect study snack
+20. Best movie genre to watch
+21. Ideal garden to plant
+22. Perfect exercise routine
+23. Best way to decorate locker
+24. Ideal time travel destination
+25. Perfect invention to create
+26. Best way to spend snow day
+27. Ideal competition to enter
+28. Perfect fundraiser idea
+29. Best way to organize closet
+30. Ideal legacy to leave behind
 
 ANSWER OPTIONS PATTERN:
 Each set of 4 options should represent different intelligences:
-- Option A: Often Linguistic or Logical-Mathematical
-- Option B: Often Spatial or Musical  
-- Option C: Often Interpersonal or Naturalistic
-- Option D: Often Bodily-Kinesthetic or Intrapersonal
+- Rotate through all 8 intelligences across questions
+- No repeated intelligence combinations
 
 CRITICAL REQUIREMENTS:
-- Every question uses a completely different scenario
+- Every question uses a COMPLETELY different scenario from the list
 - Simple language appropriate for ages 13-15
 - Focus on natural preferences, not learned skills
 - Options are 8-15 words maximum
 - Questions reveal what energizes and interests them
-- No repetition of contexts, activities, or situations
+- No repetition of contexts, activities, or situations allowed
 
-EXAMPLE:
-Q1: You have a free Saturday afternoon. What sounds most appealing?
-A. Reading an interesting book or writing stories
-B. Drawing, painting, or creating digital art
-C. Hanging out with friends at the mall
-D. Going skateboarding or playing basketball
-
-Q2: Your class is doing a project about different countries. What role would you choose?
-A. Researching facts and writing the report
-B. Creating maps, flags, or visual displays  
-C. Interviewing people from that country
-D. Building a model or demonstration
-
-Generate exactly 30 questions numbered Q1-Q30, each exploring different intelligence areas through unique scenarios."""
+Generate exactly 30 questions numbered Q1-Q30, each using the specified unique scenarios."""
     },
 
     "Emerging Identity Map": {
@@ -506,7 +529,7 @@ Generate exactly 30 questions numbered Q1-Q30, each exploring different intellig
         "section": "Middle School(13-15)",
         "prompt": """You are creating a personality assessment for 13-15 year olds based on simplified MBTI dimensions and Erikson's Identity vs Role Confusion stage (ages 12-18).
 
-Create 30 COMPLETELY UNIQUE questions that explore personality preferences and identity development patterns.
+Create 30 COMPLETELY UNIQUE questions that explore personality preferences and identity development patterns using TOTALLY DIFFERENT scenarios.
 
 MBTI DIMENSIONS TO ASSESS (simplified for teens):
 1. Energy Source: Introversion vs Extraversion (where they get energy)
@@ -514,22 +537,37 @@ MBTI DIMENSIONS TO ASSESS (simplified for teens):
 3. Decision Making: Thinking vs Feeling (how they make choices)
 4. Life Approach: Judging vs Perceiving (how they organize their world)
 
-ERIKSON'S IDENTITY FOCUS AREAS:
-- Role experimentation (trying different identities)
-- Value formation (developing personal beliefs)
-- Peer relationships (social identity)
-- Independence vs dependence (autonomy development)
-- Future orientation (career/life planning)
-
-QUESTION CATEGORIES (6-8 questions each):
-1. Social Energy & Interactions
-2. Information & Learning Preferences  
-3. Decision-Making Style
-4. Planning & Organization
-5. Identity & Values Exploration
-
-UNIQUE SCENARIO TYPES:
-Social gatherings, family situations, school challenges, friend conflicts, decision points, stress responses, free time choices, new experiences, problem-solving approaches, communication styles, planning activities, handling change, expressing opinions, dealing with emotions, future thinking.
+MANDATORY: Use these 30 COMPLETELY DIFFERENT scenarios (one per question):
+1. Choosing what to wear each morning
+2. Deciding on weekend plans with friends
+3. Handling a disagreement with parents
+4. Reacting to unexpected schedule changes
+5. Choosing elective classes for next year
+6. Dealing with a rumor about yourself
+7. Planning your ideal 16th birthday
+8. Responding to criticism from teacher
+9. Choosing Halloween costume
+10. Handling social media drama
+11. Deciding summer vacation activities
+12. Reacting to failing a test
+13. Choosing Christmas gifts for family
+14. Handling peer pressure situations
+15. Planning future high school courses
+16. Dealing with friend moving away
+17. Choosing extracurricular activities
+18. Handling embarrassing moments
+19. Deciding career exploration topics
+20. Reacting to winning an award
+21. Choosing room redecoration style
+22. Handling family dinner conversations
+23. Deciding volunteer opportunities
+24. Reacting to first day at new school
+25. Choosing social media platforms
+26. Handling disappointing news
+27. Deciding dating relationship approach
+28. Reacting to sibling conflicts
+29. Choosing personal values priorities
+30. Handling future uncertainty feelings
 
 ANSWER PATTERNS (rotate):
 Type 1 - Energy: Introversion vs Extraversion responses
@@ -537,27 +575,14 @@ Type 2 - Processing: Concrete/detail vs Big picture/possibility responses
 Type 3 - Decisions: Logic/fairness vs Values/harmony responses
 Type 4 - Organization: Structure/planning vs Flexibility/spontaneity responses
 
-DEVELOPMENTAL APPROPRIATENESS:
+CRITICAL REQUIREMENTS:
+- Every question uses a COMPLETELY different scenario from the list
 - Use situations teens actually face
-- Avoid adult concepts (work, marriage, etc.)
-- Focus on school, friends, family, interests
 - Simple vocabulary (grade 7-8 level)
 - Options 8-12 words maximum
+- No repeated scenarios or contexts allowed
 
-EXAMPLE:
-Q1: When you're feeling stressed about school, what helps you most?
-A. Having quiet time alone to think things through
-B. Talking it out with friends or family members
-C. Making a detailed plan to tackle each problem
-D. Taking a break and seeing how things develop
-
-Q2: Your friend group is planning a weekend activity. How do you usually contribute?
-A. I suggest practical activities we've enjoyed before
-B. I come up with creative new ideas to try
-C. I make sure everyone's feelings and preferences are considered
-D. I help organize the details and timing
-
-Generate exactly 30 questions numbered Q1-Q30, each exploring different personality aspects through completely unique scenarios."""
+Generate exactly 30 questions numbered Q1-Q30 using the specified unique scenarios."""
     },
 
    "Pathfinder RIASEC-Lite": {
@@ -567,7 +592,7 @@ Generate exactly 30 questions numbered Q1-Q30, each exploring different personal
         "section": "Middle School(13-15)",
         "prompt": """You are creating a career interest assessment for 13-15 year olds based on Holland's RIASEC model (Realistic, Investigative, Artistic, Social, Enterprising, Conventional).
 
-Create 30 COMPLETELY UNIQUE questions using TOTALLY DIFFERENT contexts. NO repetition of scenarios like "school needs", "club starting", "volunteer opportunity", etc.
+Create 30 COMPLETELY UNIQUE questions using TOTALLY DIFFERENT contexts. NO repetition of scenarios.
 
 HOLLAND'S 6 TYPES TO ASSESS:
 1. REALISTIC (R): Hands-on, practical, building, fixing, outdoors, tools
@@ -578,36 +603,36 @@ HOLLAND'S 6 TYPES TO ASSESS:
 6. CONVENTIONAL (C): Data, details, organizing information, following systems
 
 MANDATORY: Use these 30 DIFFERENT scenario types (one per question):
-1. Weekend free time choice
-2. Dream vacation activity  
-3. YouTube channel topic
-4. Birthday party planning
-5. Bedroom decoration style
-6. Smartphone app preference
-7. Favorite TV show genre
-8. Social media content creation
-9. Video game preference
-10. Magazine subscription choice
-11. Online shopping priority
-12. Music playlist creation
-13. Movie night selection
-14. Restaurant job interest
-15. Neighborhood problem solving
-16. Family gathering role
-17. Gift-giving approach
-18. Weather day activity
-19. Money spending priority
-20. Friend helping method
-21. Personal skill development
-22. Information source preference
-23. Stress relief method
-24. Achievement celebration
-25. Problem-solving approach
-26. Time management style
-27. Learning preference
-28. Expression method
-29. Competition participation
-30. Future living situation
+1. Smartphone notification preferences
+2. Dream house design features
+3. Perfect pet training approach
+4. Ideal car customization
+5. Favorite cooking show type
+6. Best way to learn language
+7. Perfect camping trip role
+8. Ideal photography subject
+9. Best treasure hunt strategy
+10. Perfect birthday surprise planning
+11. Favorite puzzle type
+12. Best way to help elderly neighbor
+13. Ideal science fair project
+14. Perfect art museum section
+15. Best way to organize photos
+16. Ideal fantasy novel character
+17. Perfect community garden contribution
+18. Best way to plan family reunion
+19. Ideal time capsule contents
+20. Perfect weather day activity
+21. Best way to decorate classroom
+22. Ideal historical era to visit
+23. Perfect invention for humanity
+24. Best way to help animal shelter
+25. Ideal magic power to possess
+26. Perfect way to spend lottery winnings
+27. Best approach to group project leadership
+28. Ideal documentary topic creation
+29. Perfect retirement activity
+30. Best way to preserve family memories
 
 ANSWER PATTERNS (rotate these):
 Set A: R-focus, I-focus, A-focus, S-focus
@@ -616,28 +641,15 @@ Set C: A-focus, S-focus, E-focus, C-focus
 Set D: S-focus, E-focus, C-focus, R-focus
 
 CRITICAL REQUIREMENTS:
-- Every question uses a COMPLETELY different life situation
-- NO school/club/volunteer scenarios allowed
+- Every question uses a COMPLETELY different scenario from the list above
+- NO repeated contexts or situations allowed
 - Focus on personal interests and natural preferences
 - Use everyday situations teens experience
 - Simple vocabulary (grade 7-8 level)
 - Options 8-12 words maximum
 - Mix all 6 RIASEC types across the 30 questions
 
-EXAMPLE FORMAT:
-Q1: It's Saturday morning and you have no plans. What sounds most appealing?
-A. Working on fixing or building something with your hands
-B. Reading about a topic that fascinates you online
-C. Starting a creative project like art or music
-D. Calling friends to hang out and catch up
-
-Q2: You're creating your ideal YouTube channel. What would it focus on?
-A. Teaching people how to repair or build things
-B. Explaining scientific discoveries and how things work  
-C. Showcasing original art, music, or creative content
-D. Helping people solve personal problems and feel better
-
-Generate exactly 30 questions numbered Q1-Q30, each using a completely different life scenario from the list above."""
+Generate exactly 30 questions numbered Q1-Q30, each using a completely different scenario from the list above."""
     },
 
     "FutureScope": {
@@ -647,7 +659,7 @@ Generate exactly 30 questions numbered Q1-Q30, each using a completely different
         "section": "Middle School(13-15)",
         "prompt": """You are creating a resilience and future readiness assessment for 13-15 year olds based on Duckworth's Grit Scale and Super's Career Development Theory.
 
-Create 30 COMPLETELY UNIQUE questions that assess perseverance, passion for long-term goals, adaptability, and future orientation.
+Create 30 COMPLETELY UNIQUE questions that assess perseverance, passion for long-term goals, adaptability, and future orientation using TOTALLY DIFFERENT scenarios.
 
 KEY CONCEPTS TO ASSESS:
 GRIT COMPONENTS:
@@ -656,28 +668,37 @@ GRIT COMPONENTS:
 3. Passion for Goals (deep engagement with objectives)
 4. Resilience (bouncing back from failure)
 
-SUPER'S DEVELOPMENTAL TASKS (Growth Stage 4-13, Exploration 14-24):
-1. Developing self-concept
-2. Exploring interests and abilities  
-3. Learning about work and careers
-4. Building confidence and independence
-
-ADAPTABILITY FACTORS:
-- Growth mindset vs fixed mindset
-- Emotional regulation under stress
-- Problem-solving flexibility  
-- Learning from failure
-- Goal adjustment strategies
-
-QUESTION CATEGORIES (6 questions each):
-1. Handling Setbacks & Failures
-2. Long-term Goal Pursuit  
-3. Effort & Practice Persistence
-4. Adaptability & Change
-5. Future Planning & Growth Mindset
-
-UNIQUE CHALLENGE SCENARIOS:
-Academic struggles, social conflicts, skill development, sports/activities, family expectations, peer pressure, disappointments, competition, learning difficulties, time management, goal setting, change adaptation, feedback handling, mistake recovery, persistence challenges.
+MANDATORY: Use these 30 COMPLETELY DIFFERENT scenarios (one per question):
+1. Learning to skateboard after multiple falls
+2. Saving money for expensive gaming console
+3. Training for school marathon despite slow progress
+4. Learning piano when fingers feel clumsy
+5. Growing garden when plants keep dying
+6. Building model airplane that keeps breaking
+7. Learning new language with difficult pronunciation
+8. Training pet that won't follow commands
+9. Practicing magic tricks that audience doesn't like
+10. Learning to cook when meals taste terrible
+11. Building friendship with shy classmate
+12. Improving grades in most difficult subject
+13. Learning photography with blurry pictures
+14. Training for sport with frequent losses
+15. Learning art when drawings look childish
+16. Organizing messy room that stays cluttered
+17. Learning computer coding with constant errors
+18. Building confidence for public speaking
+19. Improving handwriting when it's barely legible
+20. Learning dance moves that feel awkward
+21. Mastering video game with difficult levels
+22. Building muscle strength from weak starting point
+23. Learning instrument when sounds are harsh
+24. Improving social skills when feeling shy
+25. Developing fashion sense when outfits clash
+26. Learning debate skills when losing arguments
+27. Building stamina when getting tired quickly
+28. Learning jokes when nobody laughs
+29. Improving organization when constantly forgetting
+30. Building patience when everything feels rushed
 
 ANSWER PATTERNS (measuring different resilience aspects):
 - High Grit: Shows persistence, learns from failure, maintains long-term focus
@@ -685,34 +706,21 @@ ANSWER PATTERNS (measuring different resilience aspects):
 - Growth Mindset: Believes abilities can be developed through effort
 - Fixed Mindset: Believes abilities are unchangeable traits
 
-DEVELOPMENTAL APPROPRIATENESS:
+CRITICAL REQUIREMENTS:
+- Every question uses a COMPLETELY different scenario from the list above
 - Use realistic teen challenges and situations
-- Focus on school, friendships, activities, skills
-- Avoid adult-level stressors
 - Simple, clear language (grade 7-8 level)
 - Options 8-15 words maximum
 - Positive, solution-focused framing
+- No repeated scenarios or contexts allowed
 
-EXAMPLE:
-Q1: You've been practicing guitar for months but still struggle with a difficult song. What's your typical response?
-A. I break it into smaller parts and practice each section slowly
-B. I take a break and try again when I feel motivated  
-C. I ask my teacher for different techniques to try
-D. I accept that some songs might be too hard for me right now
-
-Q2: Your friend gets chosen for something you really wanted. How do you usually handle this?
-A. I use it as motivation to work harder next time
-B. I feel disappointed but try to be happy for my friend
-C. I look for other similar opportunities to pursue
-D. I remind myself that everyone has different strengths
-
-Generate exactly 30 questions numbered Q1-Q30, each exploring different aspects of resilience and future readiness through completely unique scenarios that teens actually face."""
+Generate exactly 30 questions numbered Q1-Q30, each exploring different aspects of resilience using the specified unique scenarios."""
     }
 }
 
 def fetch_questions(batch_prompt):
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",  # Updated to GPT-4o
         messages=[{"role": "user", "content": batch_prompt}],
         temperature=0.6,
         max_tokens=3000,  # Increased token limit
@@ -796,7 +804,11 @@ You are generating psychometric questions for the "{section_name}" section.
 Use this theory context as reference:
 {context}
 
-IMPORTANT: You must generate exactly 30 multiple choice behavioral questions. Number them Q1 through Q30.
+CRITICAL REQUIREMENTS:
+- You must generate exactly 30 multiple choice behavioral questions
+- Number them Q1 through Q30
+- Each question must use a completely different scenario (no repetition allowed)
+- Follow the mandatory scenario list provided in the prompt above
 
 Each question must follow this exact format:
 Q1: [Question text here]
@@ -812,11 +824,13 @@ C. [Option C text]
 D. [Option D text]
 
 Continue this pattern until Q30. Do not include any other text or explanations.
+
+IMPORTANT: Use each scenario from the provided list exactly once. No scenario repetition allowed.
 """
         
         try:
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o",  # Updated to GPT-4o
                 messages=[{"role": "user", "content": full_prompt}],
                 temperature=0.6,
                 max_tokens=4000,  # Increased for 30 questions
@@ -845,6 +859,8 @@ Generate {remaining} additional multiple choice behavioral questions for the "{s
 
 Use this theory: {theory_text}
 
+CRITICAL: Use completely different scenarios from any previous questions. No repetition.
+
 Format each question as:
 Q{len(all_questions) + 1}: [Question text]
 A. [Option A]
@@ -857,7 +873,7 @@ Continue numbering from Q{len(all_questions) + 1} to Q{total}.
         
         try:
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o",  # Updated to GPT-4o
                 messages=[{"role": "user", "content": additional_prompt}],
                 temperature=0.7,
                 max_tokens=2000,
@@ -900,7 +916,7 @@ Give one insight per question:
 """
 
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",  # Updated to GPT-4o
         messages=[{"role": "user", "content": prompt}],
         temperature=0.5,
         max_tokens=1500,
@@ -930,7 +946,7 @@ Respond in 1 paragraph.
 """
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o",  # Updated to GPT-4o
         messages=[{"role": "user", "content": prompt}],
         temperature=0.5,
         max_tokens=600,
