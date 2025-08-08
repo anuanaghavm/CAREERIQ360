@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.conf import settings
-from .utils.ai_assessment import generate_questions, evaluate_answers, STATIC_TESTS, generate_detailed_assessment_report
+from .utils.ai_assessment import generate_questions, evaluate_answers, STATIC_TESTS, generate_ai_report,get_report_from_cache,save_report_to_cache
 from login.models import CustomUser
 import json
 import threading
@@ -17,6 +17,7 @@ from django.core.cache import cache
 import tempfile
 import os
 import openai
+import httpx  # Added httpx import
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -53,6 +54,14 @@ class StaticAIQuestionBatchView(APIView):
             # Validate user exists
             try:
                 user = CustomUser.objects.get(uuid=uuid)
+                user_data = {
+                    'country': getattr(user, 'country', 'Unknown'),
+                    'city': getattr(user, 'city', 'Unknown'),
+                    'age': getattr(user, 'age', 15),
+                    'section': section_name,
+                    'study': getattr(user, 'study_background', 'General'),
+                    'is_student': getattr(user, 'is_student', True)
+                }
             except CustomUser.DoesNotExist:
                 return Response({"error": "Invalid UUID"}, status=404)
             except Exception as e:
@@ -81,14 +90,14 @@ class StaticAIQuestionBatchView(APIView):
             start_time = time.time()
             
             try:
-                # Direct call to generate_questions without misleading wrapper
-                qas = generate_questions(test_name, section_name, MAX_QUESTIONS)
+                # Call generate_questions with user_data
+                qas = generate_questions(test_name, user_data, section_name, MAX_QUESTIONS)
                 
-            except openai.TimeoutError as e:
-                logger.error(f"OpenAI timeout for {test_name}: {e}")
+            except httpx.TimeoutException as e:  # Fixed: Use httpx.TimeoutException
+                logger.error(f"Request timeout for {test_name}: {e}")
                 return Response({
-                    "error": "OpenAI service timeout. Please try again in a moment.",
-                    "error_code": "API_TIMEOUT",
+                    "error": "Service timeout. Please try again in a moment.",
+                    "error_code": "REQUEST_TIMEOUT",
                     "retry_suggestion": "Wait 30-60 seconds and try again"
                 }, status=504)
                 
@@ -362,11 +371,11 @@ class StaticAIAnswerBatchView(APIView):
             logger.info(f"Starting background evaluation for {len(qas_with_answers)} answers")
             start_time = time.time()
             
-            # Direct call to evaluate_answers with proper error handling
+            # Call evaluate_answers with proper error handling
             try:
                 insights = evaluate_answers(test_name, qas_with_answers, section_name)
-            except openai.TimeoutError as e:
-                logger.error(f"OpenAI timeout during evaluation: {e}")
+            except httpx.TimeoutException as e:  # Fixed: Use httpx.TimeoutException
+                logger.error(f"Request timeout during evaluation: {e}")
                 insights = [f"Evaluation temporarily unavailable due to timeout" for _ in qas_with_answers]
             except openai.RateLimitError as e:
                 logger.error(f"OpenAI rate limit during evaluation: {e}")
@@ -408,161 +417,112 @@ class StaticAIAnswerBatchView(APIView):
                     logger.error(f"Failed to update session with evaluation error: {session_error}")
 
 class GenerateAssessmentReportView(APIView):
+    """Generate comprehensive AI assessment report"""
+    
     def post(self, request):
-        """Generate assessment report with comprehensive error handling"""
         try:
-            # Extract and validate data
             test_name = request.data.get("test_name")
             section_name = request.data.get("section_name", "Middle School(13-15)")
-            uuid = request.data.get("uuid")
+            user_uuid = request.data.get("uuid")
 
+            # Validation
             if not test_name or test_name not in STATIC_TESTS:
-                return Response({"error": "Invalid or missing test_name"}, status=400)
+                return Response({"error": "Invalid test name"}, status=400)
 
-            if not uuid:
+            if not user_uuid:
                 return Response({"error": "UUID is required"}, status=400)
 
-            session_key = f"{uuid}-{test_name}-{section_name}"
+            # Get user data
+            try:
+                user = CustomUser.objects.get(uuid=user_uuid)
+                user_data = {
+                    'country': getattr(user, 'country', 'Unknown'),
+                    'city': getattr(user, 'city', 'Unknown'),
+                    'age': getattr(user, 'age', 15),
+                    'section': section_name,
+                    'email': getattr(user, 'email', 'unknown')
+                }
+            except CustomUser.DoesNotExist:
+                return Response({"error": "Invalid UUID"}, status=404)
+
+            # Get session data
+            session_key = f"{user_uuid}-{test_name}-{section_name}"
             session = SESSION_STORE.get(session_key)
 
-            if not session:
-                return Response({
-                    "error": "Session not found",
-                    "error_code": "SESSION_NOT_FOUND",
-                    "suggestion": "Please complete the assessment first"
-                }, status=404)
-
-            if not session.get("completed"):
+            if not session or not session.get("completed"):
                 return Response({
                     "error": "Assessment not completed",
-                    "error_code": "ASSESSMENT_INCOMPLETE",
-                    "progress": f"{len([qa for qa in session.get('qas', []) if qa.get('answer')])}/{len(session.get('qas', []))}"
+                    "error_code": "INCOMPLETE_ASSESSMENT",
+                    "suggestion": "Complete the assessment first"
                 }, status=400)
 
-            qas = session.get("qas", [])
-            test_data = STATIC_TESTS[test_name]
-            test_description = test_data["description"]
-            theory_content = test_data["theory"]
+            # Extract answers
+            answers = []
+            for qa in session.get("qas", []):
+                if qa.get("answer"):
+                    answers.append({
+                        "question_id": qa.get("question_id"),
+                        "question": qa.get("question"),
+                        "selected_option": qa.get("selected_option"),
+                        "answer": qa.get("answer"),
+                        "evaluation": qa.get("evaluation")
+                    })
 
-            # Generate comprehensive report
-            logger.info(f"Generating comprehensive report for {test_name}")
-            start_time = time.time()
+            if not answers:
+                return Response({
+                    "error": "No answers found",
+                    "error_code": "NO_ANSWERS"
+                }, status=400)
 
+            # Generate AI report
             try:
-                # Direct call to report generation with proper error handling
-                comprehensive_report = generate_detailed_assessment_report(
-                    test_name, test_description, theory_content, qas
-                )
+                report_data = generate_ai_report(test_name, answers, user_data)
                 
-            except openai.TimeoutError as e:
-                logger.error(f"OpenAI timeout during report generation: {e}")
-                return Response({
-                    "error": "Report generation timed out. Please try again.",
-                    "error_code": "REPORT_TIMEOUT",
-                    "retry_suggestion": "Try again in a few minutes"
-                }, status=504)
+                # Save to cache
+                report_id = save_report_to_cache(report_data)
                 
-            except openai.RateLimitError as e:
-                logger.error(f"OpenAI rate limit during report generation: {e}")
-                return Response({
-                    "error": "Rate limit exceeded during report generation. Please wait and try again.",
-                    "error_code": "REPORT_RATE_LIMIT",
-                    "retry_suggestion": "Wait 5 minutes and try again"
-                }, status=429)
-                
-            except openai.APIError as e:
-                logger.error(f"OpenAI API error during report generation: {e}")
-                return Response({
-                    "error": "OpenAI service error during report generation.",
-                    "error_code": "REPORT_API_ERROR",
-                    "retry_suggestion": "Try again in a few minutes"
-                }, status=503)
-                
-            except (OSError, IOError, ConnectionError) as e:
-                logger.error(f"Network/IO error during report generation: {e}")
-                return Response({
-                    "error": "Network error during report generation.",
-                    "error_code": "REPORT_NETWORK_ERROR",
-                    "retry_suggestion": "Check connection and try again"
-                }, status=503)
-                
-            except Exception as e:
-                logger.error(f"Unexpected error generating report: {e}")
-                logger.error(f"Traceback: {traceback.format_exc()}")
-                return Response({
-                    "error": "Report generation failed due to unexpected error",
-                    "error_code": "REPORT_GENERATION_ERROR",
-                    "debug_info": str(e) if settings.DEBUG else None,
-                    "retry_suggestion": "Please try again"
-                }, status=500)
-
-            # Check if report generation failed
-            if isinstance(comprehensive_report, dict) and comprehensive_report.get("error"):
-                logger.error(f"Report generation returned error: {comprehensive_report['error']}")
-                return Response({
-                    "error": "Report generation failed",
-                    "error_code": "REPORT_FAILED",
-                    "details": comprehensive_report["error"]
-                }, status=500)
-
-            # Store the comprehensive report
-            report_key = f"{uuid}-{test_name}-{section_name}-report"
-            try:
-                report_data = {
-                    "uuid": uuid,
-                    "user_email": session.get("user_email", "unknown"),
-                    "test_name": test_name,
-                    "section_name": section_name,
-                    "comprehensive_report": comprehensive_report,
-                    "questions_answered": len([qa for qa in qas if qa.get("answer")]),
+                # Store in memory (optional)
+                REPORTS_STORE[report_id] = {
+                    **report_data,
                     "generated_at": timezone.now().isoformat(),
-                    "qas": qas,
-                    "test_description": test_description,
-                    "theory_content": theory_content
+                    "user_uuid": user_uuid
                 }
-                
-                REPORTS_STORE[report_key] = report_data
+
+                return Response({
+                    "message": "Report generated successfully",
+                    "report_id": report_id,
+                    "report": report_data,
+                    "status": "success"
+                })
+
             except Exception as e:
-                logger.error(f"Error storing report: {e}")
-                # Continue even if storage fails
-
-            elapsed_time = time.time() - start_time
-            logger.info(f"Comprehensive report generated in {elapsed_time:.2f} seconds")
-
-            # Return structured response
-            return Response({
-                "test_name": test_name,
-                "section_name": section_name,
-                "uuid": uuid,
-                "questions_answered": len([qa for qa in qas if qa.get("answer")]),
-                
-                # Dashboard-style structured data
-                "assessment_overview": comprehensive_report.get("assessment_overview", ""),
-                "breakdown": comprehensive_report.get("breakdown", {}),
-                "characteristics": comprehensive_report.get("characteristics", {}), 
-                "insights": comprehensive_report.get("insights", ""),
-                "recommendations": comprehensive_report.get("recommendations", []),
-                "strengths_capabilities": comprehensive_report.get("strengths_capabilities", ""),
-                "complete_report": comprehensive_report.get("complete_report", ""),
-                
-                "report_id": report_key,
-                "generation_time": f"{elapsed_time:.2f}s",
-                "status": "success"
-            }, status=200)
+                logger.error(f"Report generation error: {e}")
+                return Response({
+                    "error": "Failed to generate report",
+                    "error_code": "REPORT_GENERATION_ERROR",
+                    "debug_info": str(e) if settings.DEBUG else None
+                }, status=500)
 
         except Exception as e:
-            logger.error(f"Critical error in GenerateAssessmentReportView: {e}")
-            logger.error(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"Critical error in report generation: {e}")
             return Response({
-                "error": "A critical error occurred during report generation",
-                "error_code": "CRITICAL_REPORT_ERROR",
+                "error": "Critical error occurred",
+                "error_code": "CRITICAL_ERROR",
                 "debug_info": str(e) if settings.DEBUG else None
             }, status=500)
 
+
 class GetSpecificReportView(APIView):
+    """Get a specific report by ID"""
+    
     def get(self, request, report_id):
         try:
-            report_data = REPORTS_STORE.get(report_id)
+            # Try cache first
+            report_data = get_report_from_cache(report_id)
+            
+            # Fallback to memory store
+            if not report_data:
+                report_data = REPORTS_STORE.get(report_id)
             
             if not report_data:
                 return Response({
@@ -570,142 +530,92 @@ class GetSpecificReportView(APIView):
                     "error_code": "REPORT_NOT_FOUND"
                 }, status=404)
 
-            comprehensive_report = report_data.get("comprehensive_report", {})
-            
             return Response({
-                "uuid": report_data.get("uuid"),
-                "test_name": report_data.get("test_name"),
-                "section_name": report_data.get("section_name"),
-                "generated_at": report_data.get("generated_at"),
-                "questions_answered": report_data.get("questions_answered"),
-                
-                # Structured report data
-                "assessment_overview": comprehensive_report.get("assessment_overview", ""),
-                "breakdown": comprehensive_report.get("breakdown", {}),
-                "characteristics": comprehensive_report.get("characteristics", {}),
-                "insights": comprehensive_report.get("insights", ""),
-                "recommendations": comprehensive_report.get("recommendations", []),
-                "strengths_capabilities": comprehensive_report.get("strengths_capabilities", ""),
-                "complete_report": comprehensive_report.get("complete_report", ""),
-                
-                # Optional: Include raw QA data if needed
-                "raw_qas": report_data.get("qas", []) if request.GET.get("include_raw") else None
+                "report_id": report_id,
+                "report": report_data,
+                "status": "success"
             })
+
         except Exception as e:
             logger.error(f"Error retrieving report {report_id}: {e}")
             return Response({
-                "error": "Error retrieving report",
-                "error_code": "REPORT_RETRIEVAL_ERROR",
+                "error": "Failed to retrieve report",
+                "error_code": "RETRIEVAL_ERROR",
                 "debug_info": str(e) if settings.DEBUG else None
             }, status=500)
 
+
 class GetUserReportsView(APIView):
+    """Get all reports for a specific user"""
+    
     def get(self, request, uuid):
         try:
-            try:
-                user = CustomUser.objects.get(uuid=uuid)
-            except CustomUser.DoesNotExist:
-                return Response({
-                    "error": "Invalid UUID",
-                    "error_code": "INVALID_UUID"
-                }, status=404)
-            
-            # Get all reports for this UUID
+            # Filter reports by user UUID from memory store
             user_reports = []
-            for report_key, report_data in REPORTS_STORE.items():
-                if report_data.get("uuid") == str(uuid):
+            for report_id, report_data in REPORTS_STORE.items():
+                if report_data.get("user_uuid") == uuid:
                     user_reports.append({
-                        "report_id": report_key,
+                        "report_id": report_id,
                         "test_name": report_data.get("test_name"),
                         "section_name": report_data.get("section_name"),
                         "generated_at": report_data.get("generated_at"),
-                        "questions_answered": report_data.get("questions_answered")
+                        "assessment_date": report_data.get("assessment_date")
                     })
 
+            # Sort by generated_at desc
+            user_reports.sort(key=lambda x: x.get("generated_at", ""), reverse=True)
+
             return Response({
-                "uuid": str(uuid),
-                "user_email": user.email,
-                "reports": user_reports
+                "uuid": uuid,
+                "reports": user_reports,
+                "total": len(user_reports),
+                "status": "success"
             })
-            
+
         except Exception as e:
             logger.error(f"Error retrieving user reports for {uuid}: {e}")
             return Response({
-                "error": "Error retrieving user reports",
+                "error": "Failed to retrieve user reports",
                 "error_code": "USER_REPORTS_ERROR",
                 "debug_info": str(e) if settings.DEBUG else None
             }, status=500)
 
+
 class GetUserSessionsView(APIView):
+    """Get all sessions for a specific user"""
+    
     def get(self, request, uuid):
         try:
-            try:
-                user = CustomUser.objects.get(uuid=uuid)
-            except CustomUser.DoesNotExist:
-                return Response({
-                    "error": "Invalid UUID",
-                    "error_code": "INVALID_UUID"
-                }, status=404)
-            
-            # Get all sessions for this UUID
+            # Filter sessions by user UUID
             user_sessions = []
             for session_key, session_data in SESSION_STORE.items():
-                if session_data.get("uuid") == str(uuid):
+                if session_data.get("uuid") == uuid:
                     user_sessions.append({
                         "session_key": session_key,
                         "test_name": session_data.get("test_name"),
                         "section": session_data.get("section"),
-                        "completed": session_data.get("completed"),
+                        "completed": session_data.get("completed", False),
                         "started_at": session_data.get("started_at"),
                         "completed_at": session_data.get("completed_at"),
-                        "questions_answered": len([qa for qa in session_data.get("qas", []) if qa.get("answer")])
+                        "total_questions": len(session_data.get("qas", [])),
+                        "answered_questions": len([qa for qa in session_data.get("qas", []) if qa.get("answer")]),
+                        "evaluation_completed": session_data.get("evaluation_completed", False)
                     })
 
+            # Sort by started_at desc
+            user_sessions.sort(key=lambda x: x.get("started_at", ""), reverse=True)
+
             return Response({
-                "uuid": str(uuid),
-                "user_email": user.email,
-                "sessions": user_sessions
+                "uuid": uuid,
+                "sessions": user_sessions,
+                "total": len(user_sessions),
+                "status": "success"
             })
-            
+
         except Exception as e:
             logger.error(f"Error retrieving user sessions for {uuid}: {e}")
             return Response({
-                "error": "Error retrieving user sessions",
+                "error": "Failed to retrieve user sessions",
                 "error_code": "USER_SESSIONS_ERROR",
                 "debug_info": str(e) if settings.DEBUG else None
-            }, status=500)
-
-# System status and maintenance views
-class SystemStatusView(APIView):
-    def get(self, request):
-        try:
-            from .utils.ai_assessment import VECTORSTORE_CACHE
-            
-            return Response({
-                "active_sessions": len(SESSION_STORE),
-                "stored_reports": len(REPORTS_STORE),
-                "cached_vectorstores": len(VECTORSTORE_CACHE),
-                "available_tests": list(STATIC_TESTS.keys()),
-                "system_status": "healthy"
-            })
-        except Exception as e:
-            logger.error(f"Error in system status: {e}")
-            return Response({
-                "system_status": "error",
-                "error": str(e),
-                "error_code": "SYSTEM_STATUS_ERROR"
-            }, status=500)
-
-class ClearCacheView(APIView):
-    def post(self, request):
-        try:
-            from .utils.ai_assessment import VECTORSTORE_CACHE
-            VECTORSTORE_CACHE.clear()
-            return Response({"message": "Cache cleared successfully"})
-        except Exception as e:
-            logger.error(f"Error clearing cache: {e}")
-            return Response({
-                "error": "Failed to clear cache",
-                "error_code": "CACHE_CLEAR_ERROR",
-                "details": str(e)
             }, status=500)
