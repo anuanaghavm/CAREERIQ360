@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, name, phone_number, section, country, city,age, dob, is_student, study, password=None):
+    def create_user(self, email, name, phone_number, section, country, city, dob, password=None):
         if not email:
             raise ValueError("Users must have an email address")
         email = self.normalize_email(email)
@@ -14,17 +14,14 @@ class CustomUserManager(BaseUserManager):
             section=section,
             country=country,
             city=city,
-            age=age,
             dob=dob,
-            is_student=is_student,
-            study=study
         )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, name, phone_number, section, country,city, age, dob, is_student, study, password):
-        user = self.create_user(email, name, phone_number, section, country, city,age, dob, is_student, study, password)
+    def create_superuser(self, email, name, phone_number, section, country,city, dob, password):
+        user = self.create_user(email, name, phone_number, section, country, city, dob, password)
         user.is_superuser = True
         user.is_staff = True
         user.save(using=self._db)
@@ -46,18 +43,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     section = models.CharField(max_length=20, choices=SECTION_CHOICES)
     country = models.CharField(max_length=100)
     city = models.CharField(max_length=300)
-    age = models.PositiveIntegerField()
     dob = models.DateField()
-    is_student = models.BooleanField(default=False)
-    study = models.CharField(max_length=255, blank=True, null=True)
-
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name', 'phone_number', 'section', 'country', 'age', 'dob', 'is_student', 'study']
+    REQUIRED_FIELDS = ['name', 'phone_number', 'section', 'country', 'city','dob']
 
     def __str__(self):
         return self.email
